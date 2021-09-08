@@ -1,5 +1,5 @@
-#ifndef PluginFactory_h
-#define PluginFactory_h
+#ifndef PluginFactory2_h
+#define PluginFactory2_h
 
 #include <memory>
 #include <string>

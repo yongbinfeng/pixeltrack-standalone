@@ -37,7 +37,7 @@ private:
 
   edm::EDGetTokenT<FEDRawDataCollection> rawGetToken_;
   edm::EDPutTokenT<cms::cuda::Product<SiPixelDigisCUDA>> digiPutToken_;
-  edm::EDPutTokenT<cms::cuda::Product<SiPixelDigiErrorsCUDA>> digiErrorPutToken_;
+  //edm::EDPutTokenT<cms::cuda::Product<SiPixelDigiErrorsCUDA>> digiErrorPutToken_;
   edm::EDPutTokenT<cms::cuda::Product<SiPixelClustersCUDA>> clusterPutToken_;
 
   pixelgpudetails::SiPixelRawToClusterGPUKernel gpuAlgo_;
@@ -54,12 +54,12 @@ SiPixelRawToClusterCUDA::SiPixelRawToClusterCUDA(edm::ProductRegistry& reg)
       digiPutToken_(reg.produces<cms::cuda::Product<SiPixelDigisCUDA>>()),
       clusterPutToken_(reg.produces<cms::cuda::Product<SiPixelClustersCUDA>>()),
       isRun2_(true),
-      includeErrors_(true),
+      includeErrors_(false),
       useQuality_(true) {
-  if (includeErrors_) {
-    digiErrorPutToken_ = reg.produces<cms::cuda::Product<SiPixelDigiErrorsCUDA>>();
-  }
-
+  //if (includeErrors_) {
+  //  digiErrorPutToken_ = reg.produces<cms::cuda::Product<SiPixelDigiErrorsCUDA>>();
+  //}
+  std::cout << "---> Setting up raw Cluster " << std::endl;
   wordFedAppender_ = std::make_unique<pixelgpudetails::SiPixelRawToClusterGPUKernel::WordFedAppender>();
 }
 
@@ -167,9 +167,9 @@ void SiPixelRawToClusterCUDA::produce(edm::Event& iEvent, const edm::EventSetup&
   auto tmp = gpuAlgo_.getResults();
   ctx.emplace(iEvent, digiPutToken_, std::move(tmp.first));
   ctx.emplace(iEvent, clusterPutToken_, std::move(tmp.second));
-  if (includeErrors_) {
-    ctx.emplace(iEvent, digiErrorPutToken_, gpuAlgo_.getErrors());
-  }
+  //if (includeErrors_) {
+  //  ctx.emplace(iEvent, digiErrorPutToken_, gpuAlgo_.getErrors());
+  // }
 }
 
 // define as framework plugin
