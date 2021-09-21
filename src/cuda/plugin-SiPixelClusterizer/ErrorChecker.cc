@@ -75,7 +75,7 @@ bool ErrorChecker::checkTrailer(
       errors[dummyDetId].push_back(error);
     }
     errorsInEvent = true;
-    std::cout << "fedTrailer.check failed, Fed: " << fedId << ", errorType = 33" << std::endl;
+    //std::cout << "fedTrailer.check failed, Fed: " << fedId << ", errorType = 33" << std::endl;
     return false;
   }
   if (fedTrailer.fragmentLength() != nWords) {

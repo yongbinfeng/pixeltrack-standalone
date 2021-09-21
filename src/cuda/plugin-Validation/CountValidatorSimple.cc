@@ -51,10 +51,11 @@ CountValidatorSimple::CountValidatorSimple(edm::ProductRegistry& reg)
   clusterToken_(reg.consumes<cms::cuda::Product<SiPixelClustersCUDA>>()),
   trackToken_(reg.consumes<PixelTrackHeterogeneous>()),
   vertexToken_(reg.consumes<ZVertexHeterogeneous>()) {
+  output_ = new uint32_t[32768*6+1];
 }
 
 void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
-  std::cout << "----> simple produce " << std::endl;
+  //std::cout << "----> simple produce " << std::endl;
   bool ok = true;
   //DigiClusterCount
   std::stringstream ss;
@@ -101,23 +102,28 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     //pCount = 3*nDigis_+1;
   } 
   */
-  {
+  //{
     auto const& tracks = iEvent.get(trackToken_);
     uint32_t nTracks = tracks->stride();
+    //std::cout << " N Tracks ---> " << nTracks << std::endl;
     output_[0] = nTracks; pCount++;
+    //std::cout << " N Tracks 1 --- " << std::endl;
     std::memcpy(output_ + pCount,tracks->chi2.data()   ,nTracks*sizeof(float));   pCount+=nTracks;
     std::memcpy(output_ + pCount,tracks->m_quality.data(),nTracks*sizeof(uint8_t)); pCount+=nTracks;
     std::memcpy(output_ + pCount,tracks->eta.data()    ,nTracks*sizeof(float)); pCount+=nTracks;
     std::memcpy(output_ + pCount,tracks->pt.data()     ,nTracks*sizeof(float)); pCount+=nTracks;
-    std::memcpy(output_ + pCount,tracks->hitIndices.begin(),5*nTracks*nTracks*sizeof(uint16_t)); pCount+=nTracks*nTracks*5;
-    std::memcpy(output_ + pCount,tracks->detIndices.begin(),5*nTracks*nTracks*sizeof(uint16_t)); pCount+=nTracks*nTracks*5;
+    //std::memcpy(output_ + pCount,tracks->hitIndices.begin(),5*nTracks*nTracks*sizeof(uint16_t)); pCount+=nTracks*nTracks*5;
+    //std::memcpy(output_ + pCount,tracks->detIndices.begin(),5*nTracks*nTracks*sizeof(uint16_t)); pCount+=nTracks*nTracks*5;
     //std::memcpy(output_ + pCount,tracks->stateAtBS,nTracks_*sizeof(uint8_t)); pCount+=nTracks_;
-  }
-  {
+    //std::cout << " N Tracks 4 --- " << nTracks << std::endl;
+    //}
+    //{
+    //std::cout << " N Vtx 1 --- " << std::endl;
     static constexpr uint32_t MAXTRACKS = 32 * 1024;
     static constexpr uint32_t MAXVTX = 1024;
     auto const& vertices = iEvent.get(vertexToken_);
     uint32_t nvtx = vertices->nvFinal;
+    //std::cout << " N Vtx 2 --- " << nvtx << std::endl;
     output_[pCount] = nvtx;
     std::memcpy(output_ + pCount,vertices->idv    ,MAXTRACKS*sizeof(int16_t));   pCount+=MAXTRACKS;
     std::memcpy(output_ + pCount,vertices->zv     ,MAXVTX*sizeof(float));        pCount+=MAXVTX;
@@ -126,7 +132,8 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     std::memcpy(output_ + pCount,vertices->ptv2   ,MAXVTX*sizeof(float));        pCount+=MAXVTX;
     std::memcpy(output_ + pCount,vertices->ndof   ,MAXVTX*sizeof(int32_t));      pCount+=MAXVTX;
     std::memcpy(output_ + pCount,vertices->sortInd,MAXVTX*sizeof(uint16_t));     pCount+=MAXVTX;
-  }
+    //std::cout << " N Vtx 5 --- " << " --- total " << pCount << std::endl;
+    //}
   ++allEvents;
   if (ok) {
     ++goodEvents;
