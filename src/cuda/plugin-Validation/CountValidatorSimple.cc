@@ -51,7 +51,7 @@ CountValidatorSimple::CountValidatorSimple(edm::ProductRegistry& reg)
   clusterToken_(reg.consumes<cms::cuda::Product<SiPixelClustersCUDA>>()),
   trackToken_(reg.consumes<PixelTrackHeterogeneous>()),
   vertexToken_(reg.consumes<ZVertexHeterogeneous>()) {
-  output_ = new uint32_t[32768*6+1];
+  output_ = new uint32_t[32768*26+1];
 }
 
 void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
@@ -112,9 +112,28 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     std::memcpy(output_ + pCount,tracks->m_quality.data(),nTracks*sizeof(uint8_t)); pCount+=nTracks;
     std::memcpy(output_ + pCount,tracks->eta.data()    ,nTracks*sizeof(float)); pCount+=nTracks;
     std::memcpy(output_ + pCount,tracks->pt.data()     ,nTracks*sizeof(float)); pCount+=nTracks;
+    std::memcpy(output_ + pCount,tracks->stateAtBS.state(0).data(),nTracks*sizeof(float)*5); pCount+=(nTracks*5);
+    std::memcpy(output_ + pCount,tracks->stateAtBS.covariance(0).data(),nTracks*sizeof(float)*15); pCount+=(nTracks*15);
     //std::memcpy(output_ + pCount,tracks->hitIndices.begin(),5*nTracks*nTracks*sizeof(uint16_t)); pCount+=nTracks*nTracks*5;
     //std::memcpy(output_ + pCount,tracks->detIndices.begin(),5*nTracks*nTracks*sizeof(uint16_t)); pCount+=nTracks*nTracks*5;
-    //std::memcpy(output_ + pCount,tracks->stateAtBS,nTracks_*sizeof(uint8_t)); pCount+=nTracks_;
+    //std::cout << " -1-> " << &(*(tracks->stateAtBS.state(0).array().begin()))           << " -- " << &(*(tracks->stateAtBS.state(0).array().end()))     << " -- " <<  &(*(tracks->stateAtBS.state(31721).array().begin())) << std::endl;
+    //std::cout << "-1-> " << tracks->stateAtBS.state(0) << std::endl;
+    //for(auto iState = 0; iState < 100; iState++) {  
+    //  for(auto i0 = tracks->stateAtBS.covariance(iState).begin(); i0 < tracks->stateAtBS.covariance(iState).end(); i0++) { std::cout << "iter---> " << iState << " -- " << &(*i0) << " -- " << *i0 << std::endl;}
+    // }
+    //std::cout << " --> done " << std::endl;
+    //std::cout << " -2-> " << &(*(tracks->stateAtBS.covariance(0).array().begin()))      << " -- " << &(*(tracks->stateAtBS.covariance(0).array().end()))     << " -- " <<  &(*(tracks->stateAtBS.covariance(31721).array().begin())) << std::endl;
+    //std::cout << " -3-> " << tracks->stateAtBS.state(0).data()           << " -- " << tracks->stateAtBS.state(1).data()          << " -- " <<  tracks->stateAtBS.state(31721).data() << std::endl;
+    //std::cout << " -4-> " << tracks->stateAtBS.covariance(0).data()      << " -- " << tracks->stateAtBS.covariance(1).data()     << " -- " <<  tracks->stateAtBS.covariance(31721).data() << std::endl;
+    //std::cout << " -2-> " << tracks->stateAtBS.covariance(0).array() << " -- " << tracks->stateAtBS.covariance(1).array() << " -- " << tracks->stateAtBS.covariance(31728).array() << std::endl;
+    //std::cout << " -1-> " << &(tracks->stateAtBS.state(0)(0))      << " -- " << &(tracks->stateAtBS.state(0)(1))      << " -- " << &(tracks->stateAtBS.state(0)(4)) << std::endl;
+    //std::cout << " -2-> " << &(tracks->stateAtBS.covariance(0)(0)) << " -- " << &(tracks->stateAtBS.covariance(0)(1)) << " -- " << &(tracks->stateAtBS.covariance(0)(14)) << std::endl;
+    //std::cout << " -2-> " << (tracks->stateAtBS.state.data())      << std::endl;
+    //std::cout << " -2-> " << &(tracks->stateAtBS.covariance(0).data()) << " -- " << &(tracks->stateAtBS.covariance(1).data()) << " -- " << &(tracks->stateAtBS.covariance(31728).data()) << std::endl;
+    //std::cout << " -1-> " << &(tracks->stateAtBS.state(0)) << " -- " << &(tracks->stateAtBS.state(1)) << " -- " << &(tracks->stateAtBS.state(31728)) << std::endl;
+    //std::cout << " -2-> " << &(tracks->stateAtBS.covariance(0)) << " -- " << &(tracks->stateAtBS.covariance(1)) << " -- " << &(tracks->stateAtBS.covariance(31728)) << std::endl;
+    //std::cout << " -3-> " << tracks->stateAtBS(0) << " -- " << tracks->stateAtBS(1) << " -- " << tracks->stateAtBS(31728) << std::endl;
+    //std::memcpy(output_ + pCount,tracks->stateAtBS.data(),nTracks*sizeof(uint8_t)); pCount+=nTracks;
     //std::cout << " N Tracks 4 --- " << nTracks << std::endl;
     //}
     //{
