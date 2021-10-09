@@ -56,7 +56,7 @@ CountValidatorSimple::CountValidatorSimple(edm::ProductRegistry& reg)
   clusterToken_(reg.consumes<cms::cuda::Product<SiPixelClustersCUDA>>()),
   trackToken_(reg.consumes<PixelTrackHeterogeneous>()),
   vertexToken_(reg.consumes<ZVertexHeterogeneous>()) {
-  output_ = new uint32_t[5*75000+32768*36+1];
+  output_ = new uint32_t[5*150000+32768*36+1];
 }
 
 void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
@@ -89,8 +89,8 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     std::memcpy(output_ + pCount,hits.get(),(4*nHits_+1)*sizeof(uint32_t)); pCount+=(4*nHits_+1);
     
     nDigis_    = digis.nDigis();
-    if(nDigis_ > 75000) std::cout << "----> Too many Digis #Digis  " << nDigis_ << " Max! " << nDigis_ << std::endl;
-    if(nDigis_ > 75000) nDigis_ = 75000;
+    if(nDigis_ > 150000) std::cout << "----> Too many Digis #Digis  " << nDigis_ << " Max! " << nDigis_ << std::endl;
+    if(nDigis_ > 150000) nDigis_ = 150000;
     pdigi_     = digis.pdigiToHostAsync(ctx.stream());
     rawIdArr_  = digis.rawIdArrToHostAsync(ctx.stream());
     adc_       = digis.adcToHostAsync(ctx.stream());
