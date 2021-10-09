@@ -14,8 +14,8 @@ public:
   ~SiPixelDigisSoAFromCUDA() override = default;
 
 private:
-  void acquire(const edm::Event& iEvent,
-               const edm::EventSetup& iSetup,
+  void acquire(edm::Event const& iEvent,
+               edm::EventSetup const& iSetup,
                edm::WaitingTaskWithArenaHolder waitingTaskHolder) override;
   void produce(edm::Event& iEvent, const edm::EventSetup& iSetup) override;
 
@@ -34,8 +34,8 @@ SiPixelDigisSoAFromCUDA::SiPixelDigisSoAFromCUDA(edm::ProductRegistry& reg)
     : digiGetToken_(reg.consumes<cms::cuda::Product<SiPixelDigisCUDA>>()),
       digiPutToken_(reg.produces<SiPixelDigisSoA>()) {}
 
-void SiPixelDigisSoAFromCUDA::acquire(const edm::Event& iEvent,
-                                      const edm::EventSetup& iSetup,
+void SiPixelDigisSoAFromCUDA::acquire(edm::Event const& iEvent,
+                                      edm::EventSetup const& iSetup,
                                       edm::WaitingTaskWithArenaHolder waitingTaskHolder) {
   // Do the transfer in a CUDA stream parallel to the computation CUDA stream
   cms::cuda::ScopedContextAcquire ctx{iEvent.streamID(), std::move(waitingTaskHolder)};
