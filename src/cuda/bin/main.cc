@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
       edmodules.insert(vertpos + 1, "PixelVertexSoAFromCUDA");
     }
     if (validation) {
-      edmodules.emplace_back("CountValidator");
+      edmodules.emplace_back("CountValidatorSimple");
     }
     if (histogram) {
       edmodules.emplace_back("HistoValidator");
