@@ -64,28 +64,14 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
   bool ok = true;
   unsigned int pCount = 0;
   {
+
+    std::cout <<" ---  here" << std::endl;
     auto const& hits = iEvent.get(hitsToken_);
     
     auto const& pdigis = iEvent.get(digiToken_);
     cms::cuda::ScopedContextProduce ctx{pdigis};
-    //auto const& count = iEvent.get(digiClusterCountToken_);
     auto const& digis = ctx.get(iEvent, digiToken_);
-    //auto const& clusters = ctx.get(iEvent, clusterToken_);
-    /*
-    DigiClusterCount count(1,1,1);
-    if (digis.nModules() != count.nModules()) {
-      ss << "\n N(modules) is " << digis.nModules() << " expected " << count.nModules();
-      ok = false;
-    }
-    if (digis.nDigis() != count.nDigis()) {
-      ss << "\n N(digis) is " << digis.nDigis() << " expected " << count.nDigis();
-      ok = false;
-    }
-    if (clusters.nClusters() != count.nClusters()) {
-      ss << "\n N(clusters) is " << clusters.nClusters() << " expected " << count.nClusters();
-      ok = false;
-    }
-    */
+    std::cout <<" --- 1" << std::endl;
     nHits_ = hits.get()[0];
     if(nHits_ > 35000) std::cout << "----> Too many Hits #Hits  " << nHits_ << " Max! 30000 " << std::endl;
     if(nHits_ > 35000) nHits_ = 35000;
@@ -93,7 +79,8 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     static const unsigned maxNumModules = 2000;
     std::memcpy(output_ + pCount,hits.get()+1,(maxNumModules)*sizeof(uint32_t)); pCount += maxNumModules;
     std::memcpy(output_ + pCount,hits.get()+2001,(3*nHits_)*sizeof(float)); pCount+=(3*nHits_);
-      
+
+    std::cout <<" ---2" << std::endl;
     nDigis_    = digis.nDigis();
     if(nDigis_ > 150000) std::cout << "----> Too many Digis #Digis  " << nDigis_ << " Max! " << nDigis_ << std::endl;
     if(nDigis_ > 150000) nDigis_ = 150000;
@@ -102,7 +89,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     adc_       = digis.adcToHostAsync(ctx.stream());
     clus_      = digis.clusToHostAsync(ctx.stream());
     output_[pCount] = nDigis_; pCount++;
-    //std::cout <<" ---> " << nDigis_ << " -- " << pCount << std::endl;
+    std::cout <<" ---> " << nDigis_ << " -- " << pCount << std::endl;
     std::memcpy(output_ + pCount,pdigi_.get()   ,nDigis_*sizeof(uint32_t)); pCount+=nDigis_;
     std::memcpy(output_ + pCount,rawIdArr_.get(),nDigis_*sizeof(uint32_t)); pCount+=nDigis_;
     std::memcpy(output_ + pCount,adc_.get()     ,nDigis_*sizeof(uint16_t)); pCount+=nDigis_;
@@ -121,7 +108,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
       //if(clus_.get()[i0] == 0) std::cout << " -zero- " << i0 << " -- " << rawIdArr_.get()[i0] << " -- " << adc_.get()[i0] << std::endl;
     //}
   }
-  
+  std::cout <<" ---3" << std::endl;
   {
 
     auto const& tracks = iEvent.get(trackToken_);
@@ -148,7 +135,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     //std::cout << "---> " << tracks->detIndices.capacity() << " -- " << tracks->detIndices.psws << std::endl;
     //int test = int(trackQuality::dup);
     //int test1 = int(trackQuality::loose);
-    uint32_t nClean = 0;
+    std::cout <<" ---> here " << std::endl;
     std::vector<float> chi2;
     std::vector<uint8_t> quality;
     std::vector<float> eta;
@@ -159,7 +146,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     std::vector<uint32_t> hitsOff;
     std::vector<uint32_t> detsRaw;
     std::vector<uint32_t> detsOff;
-    unsigned pInt = 0;
+    uint32_t pInt = 0;
     for(unsigned  i0 = 0; i0 < nTracks; i0++) {
       //std::cout << "-quality--> " << i0 << " -- " << int(tracks->quality(i0))  << " -- " << tracks->pt(i0) << " -- " << tracks->nHits(i0) << " -- " << test << " -- " << test1 <<  std::endl;
       if(tracks->quality(i0) > trackQuality::dup && tracks->pt(i0) > 0.5 && tracks->nHits(i0) > 0) {
@@ -170,8 +157,8 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
 	pt.emplace_back(tracks->pt(i0));
 	stateAtBS.reserve(5);
 	stateAtBSCov.reserve(15);
-	std::memcpy(stateAtBS+5*pInt,tracks->stateAtBS.state(i0).data(),sizeof(float)*5);
-	std::memcpy(stateAtBSCov+15*pInt,tracks->stateAtBS.covariance(i0).data(),sizeof(float)*15);
+	std::memcpy(stateAtBS.data()+5*pInt,tracks->stateAtBS.state(i0).data(),sizeof(float)*5);
+	std::memcpy(stateAtBSCov.data()+15*pInt,tracks->stateAtBS.covariance(i0).data(),sizeof(float)*15);
 	hitsOff.emplace_back(tracks->hitIndices.size(i0));
 	detsOff.emplace_back(tracks->detIndices.size(i0));
 	hitsRaw.reserve(5);
@@ -180,6 +167,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
 	std::memcpy(detsRaw.data()+5*pInt,tracks->detIndices.begin(i0),sizeof(uint32_t)*5);
       }
     }
+    std::cout <<" ---> done " << std::endl;
     hitsOff.emplace_back(tracks->hitIndices.size());
     detsOff.emplace_back(tracks->detIndices.size());
     nTracks = pInt;

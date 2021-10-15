@@ -2,6 +2,7 @@ BeamSpotESProducer pluginBeamSpotProducer.so
 BeamSpotToCUDA pluginBeamSpotProducer.so
 CAHitNtupletCUDA pluginPixelTriplets.so
 CountValidator pluginValidation.so
+CountValidatorSimple pluginValidation.so
 HistoValidator pluginValidation.so
 SiPixelFedCablingMapGPUWrapperESProducer pluginSiPixelClusterizer.so
 SiPixelGainCalibrationForHLTGPUESProducer pluginSiPixelClusterizer.so
@@ -12,3 +13,4 @@ PixelTrackSoAFromCUDA pluginPixelTrackFitting.so
 PixelVertexProducerCUDA pluginPixelVertexFinding.so
 PixelVertexSoAFromCUDA pluginPixelVertexFinding.so
 SiPixelRecHitCUDA pluginSiPixelRecHits.so
+SiPixelDigisSoAFromCUDA pluginSiPixelRawToDigi.so
