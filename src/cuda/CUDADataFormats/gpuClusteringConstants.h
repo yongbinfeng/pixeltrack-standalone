@@ -22,7 +22,9 @@ namespace gpuClustering {
   constexpr uint32_t maxHitsInModule() { return 1024; }
 
   constexpr uint32_t MaxNumModules = 2000;
-  constexpr int32_t MaxNumClustersPerModules = maxHitsInModule();
+  constexpr uint32_t maxNumModules = 2000;
+  constexpr int32_t  MaxNumClustersPerModules = maxHitsInModule();
+  constexpr int32_t  maxNumClustersPerModules = maxHitsInModule();
   constexpr uint32_t MaxHitsInModule = maxHitsInModule();  // as above
   constexpr uint32_t MaxNumClusters = pixelGPUConstants::maxNumberOfHits;
   constexpr uint16_t InvId = 9999;  // must be > MaxNumModules

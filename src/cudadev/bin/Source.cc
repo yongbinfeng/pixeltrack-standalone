@@ -29,12 +29,10 @@ namespace edm {
     std::ifstream in_digiclusters;
     std::ifstream in_tracks;
     std::ifstream in_vertices;
-
     if (validation_) {
       digiClusterToken_ = reg.produces<DigiClusterCount>();
       trackToken_ = reg.produces<TrackCount>();
       vertexToken_ = reg.produces<VertexCount>();
-
       in_digiclusters = std::ifstream(datadir / "digicluster.bin", std::ios::binary);
       in_tracks = std::ifstream(datadir / "tracks.bin", std::ios::binary);
       in_vertices = std::ifstream(datadir / "vertices.bin", std::ios::binary);
@@ -43,6 +41,7 @@ namespace edm {
       in_vertices.exceptions(std::ifstream::badbit | std::ifstream::failbit | std::ifstream::eofbit);
     }
 
+    
     unsigned int nfeds;
     in_raw.exceptions(std::ifstream::badbit);
     in_raw.read(reinterpret_cast<char *>(&nfeds), sizeof(unsigned int));
@@ -67,6 +66,7 @@ namespace edm {
       in_raw.exceptions(std::ifstream::badbit);
       in_raw.read(reinterpret_cast<char *>(&nfeds), sizeof(unsigned int));
     }
+ 
 
     if (validation_) {
       assert(raw_.size() == digiclusters_.size());
@@ -77,6 +77,7 @@ namespace edm {
     if (maxEvents_ < 0) {
       maxEvents_ = raw_.size();
     }
+	
   }
 
   std::unique_ptr<Event> Source::produce(int streamId, ProductRegistry const &reg) {

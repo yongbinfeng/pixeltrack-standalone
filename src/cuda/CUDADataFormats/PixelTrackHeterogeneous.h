@@ -7,7 +7,7 @@
 #include "CUDADataFormats/HeterogeneousSoA.h"
 
 namespace trackQuality {
-  enum Quality : uint8_t { bad = 0, dup, loose, strict, tight, highPurity };
+  enum Quality : uint8_t { bad = 0, edup, dup, loose, strict, tight, highPurity };
 }
 
 template <int32_t S>

@@ -21,37 +21,39 @@ namespace {
   }
 
   cAHitNtupletGenerator::QualityCuts makeQualityCuts() {
-    auto coeff = std::vector<double>{0.68177776, 0.74609577, -0.08035491, 0.00315399};  // chi2Coeff
+    auto coeff = std::vector<double>{0.9,1.8};
+    float ptMax = 10;//pset.getParameter<double>("chi2MaxPt");
+    coeff[1] = (coeff[1] - coeff[0]) / log2(ptMax);
     return cAHitNtupletGenerator::QualityCuts{// polynomial coefficients for the pT-dependent chi2 cut
-                                              {(float)coeff[0], (float)coeff[1], (float)coeff[2], (float)coeff[3]},
-                                              // max pT used to determine the chi2 cut
-                                              10.f,  // chi2MaxPt
-                                                     // chi2 scale factor: 30 for broken line fit, 45 for Riemann fit
-                                              30.f,  // chi2Scale
-                                                     // regional cuts for triplets
-                                              {
-                                                  0.3f,  //tripletMaxTip
-                                                  0.5f,  // tripletMinPt
-                                                  12.f   // tripletMaxZip
-                                              },
-                                              // regional cuts for quadruplets
-                                              {
-                                                  0.5f,  // quadrupletMaxTip
-                                                  0.3f,  // quadrupletMinPt
-                                                  12.f   // quadrupletMaxZip
-                                              }};
+      {(float)coeff[0], (float)coeff[1], 0.f, 0.f},
+	// max pT used to determine the chi2 cut
+	10.f,  // chi2MaxPt
+	  // chi2 scale factor: 30 for broken line fit, 45 for Riemann fit
+	  8.f,  // chi2Scale
+	  // regional cuts for triplets
+	  {
+	    0.3f,  //tripletMaxTip
+	      0.5f,  // tripletMinPt
+	      12.f   // tripletMaxZip
+	      },
+	  // regional cuts for quadruplets
+	    {
+	      0.5f,  // quadrupletMaxTip
+		0.3f,  // quadrupletMinPt
+		12.f   // quadrupletMaxZip
+		}};
   }
 }  // namespace
 
 using namespace std;
 CAHitNtupletGeneratorOnGPU::CAHitNtupletGeneratorOnGPU(edm::ProductRegistry& reg)
     : m_params(true,              // onGPU
-               3,                 // minHitsPerNtuplet,
-               458752,            // maxNumberOfDoublets
+               4,                 // minHitsPerNtuplet,
+               caConstants::maxNumberOfDoublets,            // maxNumberOfDoublets
                5,                 // minHitsForSharingCut
                false,             // useRiemannFit
                true,              // fit5as4,
-               true,              // includeJumpingForwardDoublets
+               false,             // includeJumpingForwardDoublets
                true,              // earlyFishbone
                false,             // lateFishbone
                true,              // idealConditions
@@ -60,6 +62,8 @@ CAHitNtupletGeneratorOnGPU::CAHitNtupletGeneratorOnGPU(edm::ProductRegistry& reg
                true,              // doZ0Cut
                true,              // doPtCut
                true,              // doSharedHitCut
+	       false,              // dupPassThrough
+               false,             // UseSimpleTriplet
                0.899999976158,    // ptmin
                0.00200000009499,  // CAThetaCutBarrel
                0.00300000002608,  // CAThetaCutForward
@@ -67,6 +71,8 @@ CAHitNtupletGeneratorOnGPU::CAHitNtupletGeneratorOnGPU(edm::ProductRegistry& reg
                0.15000000596,     // dcaCutInnerTriplet
                0.25,              // dcaCutOuterTriplet
                makeQualityCuts()) {
+
+  
 #ifdef DUMP_GPU_TK_TUPLES
   printf("TK: %s %s % %s %s %s %s %s %s %s %s %s %s %s %s %s\n",
          "tid",
@@ -110,7 +116,7 @@ CAHitNtupletGeneratorOnGPU::~CAHitNtupletGeneratorOnGPU() {
   }
 }
 
-PixelTrackHeterogeneous CAHitNtupletGeneratorOnGPU::makeTuplesAsync(TrackingRecHit2DCUDA const& hits_d,
+PixelTrackHeterogeneous CAHitNtupletGeneratorOnGPU::makeTuplesAsync(TrackingRecHit2DGPU const& hits_d,
                                                                     float bfield,
                                                                     cudaStream_t stream) const {
   PixelTrackHeterogeneous tracks(cms::cuda::make_device_unique<pixelTrack::TrackSoA>(stream));

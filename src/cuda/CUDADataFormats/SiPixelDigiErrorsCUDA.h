@@ -25,8 +25,7 @@ public:
   cms::cuda::SimpleVector<PixelErrorCompact> const* error() const { return error_d.get(); }
   cms::cuda::SimpleVector<PixelErrorCompact> const* c_error() const { return error_d.get(); }
 
-  using HostDataError =
-      std::pair<cms::cuda::SimpleVector<PixelErrorCompact>, cms::cuda::host::unique_ptr<PixelErrorCompact[]>>;
+  using HostDataError = std::pair<cms::cuda::SimpleVector<PixelErrorCompact>, cms::cuda::host::unique_ptr<PixelErrorCompact[]>>;
   HostDataError dataErrorToHostAsync(cudaStream_t stream) const;
 
   void copyErrorToHostAsync(cudaStream_t stream);

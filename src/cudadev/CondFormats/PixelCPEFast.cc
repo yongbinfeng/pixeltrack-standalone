@@ -24,11 +24,16 @@ PixelCPEFast::PixelCPEFast(std::string const &path) {
     in.exceptions(std::ifstream::badbit | std::ifstream::failbit | std::ifstream::eofbit);
     in.read(reinterpret_cast<char *>(&commonParamsGPU_), sizeof(pixelCPEforGPU::CommonParams));
     unsigned int ndetParams;
+    std::cout <<" ----> det params " << std::endl;
     in.read(reinterpret_cast<char *>(&ndetParams), sizeof(unsigned int));
     detParamsGPU_.resize(ndetParams);
+    std::cout <<" ----> det params GPU " << std::endl;
     in.read(reinterpret_cast<char *>(detParamsGPU_.data()), ndetParams * sizeof(pixelCPEforGPU::DetParams));
+    std::cout <<" ----> avg " << std::endl;
     in.read(reinterpret_cast<char *>(&averageGeometry_), sizeof(pixelCPEforGPU::AverageGeometry));
+    std::cout <<" ----> layer " << std::endl;
     in.read(reinterpret_cast<char *>(&layerGeometry_), sizeof(pixelCPEforGPU::LayerGeometry));
+    std::cout <<" ----> done " << std::endl;
   }
 
   cpuData_ = {

@@ -23,6 +23,7 @@ void BeamSpotESProducer::produce(edm::EventSetup& eventSetup) {
   in.exceptions(std::ifstream::badbit | std::ifstream::failbit | std::ifstream::eofbit);
   in.read(reinterpret_cast<char*>(bs.get()), sizeof(BeamSpotPOD));
   eventSetup.put(std::move(bs));
+  std::cout << "--> In " << std::endl;
 }
 
 DEFINE_FWK_EVENTSETUP_MODULE(BeamSpotESProducer);

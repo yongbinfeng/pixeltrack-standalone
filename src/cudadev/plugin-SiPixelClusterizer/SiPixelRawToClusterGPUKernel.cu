@@ -345,7 +345,7 @@ namespace pixelgpudetails {
                                    uint32_t *pdigi,
                                    uint32_t *rawIdArr,
                                    uint16_t *moduleId,
-                                   cms::cuda::SimpleVector<SiPixelErrorCompact> *err,
+                                   cms::cuda::SimpleVector<PixelErrorCompact> *err,
                                    bool useQualityInfo,
                                    bool includeErrors,
                                    bool debug) {
@@ -380,7 +380,7 @@ namespace pixelgpudetails {
       skipROC = (roc < pixelgpudetails::maxROCIndex) ? false : (errorType != 0);
       if (includeErrors and skipROC) {
         uint32_t rID = getErrRawID(fedId, ww, errorType, cablingMap, debug);
-        err->push_back(SiPixelErrorCompact{rID, ww, errorType, fedId});
+        err->push_back(PixelErrorCompact{rID, ww, errorType, fedId});
         continue;
       }
 
@@ -422,7 +422,7 @@ namespace pixelgpudetails {
         if (includeErrors) {
           if (not rocRowColIsValid(row, col)) {
             uint8_t error = conversionError(fedId, 3, debug);  //use the device function and fill the arrays
-            err->push_back(SiPixelErrorCompact{rawId, ww, error, fedId});
+            err->push_back(PixelErrorCompact{rawId, ww, error, fedId});
             if (debug)
               printf("BPIX1  Error status: %i\n", error);
             continue;
@@ -438,7 +438,7 @@ namespace pixelgpudetails {
         localPix.col = col;
         if (includeErrors and not dcolIsValid(dcol, pxid)) {
           uint8_t error = conversionError(fedId, 3, debug);
-          err->push_back(SiPixelErrorCompact{rawId, ww, error, fedId});
+          err->push_back(PixelErrorCompact{rawId, ww, error, fedId});
           if (debug)
             printf("Error status: %i %d %d %d %d\n", error, dcol, pxid, fedId, roc);
           continue;
