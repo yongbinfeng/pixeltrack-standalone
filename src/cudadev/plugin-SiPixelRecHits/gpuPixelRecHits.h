@@ -131,7 +131,8 @@ namespace gpuPixelRecHits {
 
       __syncthreads();
 
-      auto pixmx = cpeParams->detParams(me).pixmx;
+      //auto pixmx = cpeParams->detParams(me).pixmx;
+      auto pixmx = std::numeric_limits<uint16_t>::max();
       for (int i = first; i < numElements; i += blockDim.x) {
         auto id = digis.moduleInd(i);
         if (id == invalidModuleId)

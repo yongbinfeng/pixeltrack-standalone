@@ -75,7 +75,7 @@ namespace gpuClustering {
       }
 
       //init hist  (ymax=416 < 512 : 9bits)
-      constexpr uint32_t maxPixInModule = 4000;
+      constexpr uint32_t maxPixInModule = 6000;
       constexpr auto nbins = phase1PixelTopology::numColsInModule + 2;  //2+2;
       using Hist = cms::cuda::HistoContainer<uint16_t, nbins, maxPixInModule, 9, uint16_t>;
       __shared__ Hist hist;
@@ -218,13 +218,13 @@ namespace gpuClustering {
               auto l = nn[k][kk];
               auto m = l + firstPixel;
               assert(m != i);
-              auto old = atomicMin_block(&clusterId[m], clusterId[i]);
+              auto old = atomicMin(&clusterId[m], clusterId[i]); //FIX BLOCK
               // do we need memory fence?
               if (old != clusterId[i]) {
                 // end the loop only if no changes were applied
                 more = true;
               }
-              atomicMin_block(&clusterId[i], old);
+              atomicMin(&clusterId[i], old); //FIX BLOC
             }  // nnloop
           }    // pixel loop
         }

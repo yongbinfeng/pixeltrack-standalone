@@ -53,7 +53,7 @@ CAHitNtupletGeneratorOnGPU::CAHitNtupletGeneratorOnGPU(edm::ProductRegistry& reg
                5,                 // minHitsForSharingCut
                false,             // useRiemannFit
                true,              // fit5as4,
-               false,             // includeJumpingForwardDoublets
+               false,              // includeJumpingForwardDoublets
                true,              // earlyFishbone
                false,             // lateFishbone
                true,              // idealConditions

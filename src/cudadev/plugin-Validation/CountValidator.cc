@@ -69,18 +69,18 @@ void CountValidator::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
     auto const& digis = ctx.get(iEvent, digiToken_);
     auto const& clusters = ctx.get(iEvent, clusterToken_);
 
-    if (digis.nModules() != count.nModules()) {
+    //if (digis.nModules() != count.nModules()) {
       ss << "\n N(modules) is " << digis.nModules() << " expected " << count.nModules();
       ok = false;
-    }
-    if (digis.nDigis() != count.nDigis()) {
+      //}
+      //if (digis.nDigis() != count.nDigis()) {
       ss << "\n N(digis) is " << digis.nDigis() << " expected " << count.nDigis();
       ok = false;
-    }
-    if (clusters.nClusters() != count.nClusters()) {
+      // }
+      //if (clusters.nClusters() != count.nClusters()) {
       ss << "\n N(clusters) is " << clusters.nClusters() << " expected " << count.nClusters();
       ok = false;
-    }
+      //}
   }
 
   {
@@ -99,11 +99,11 @@ void CountValidator::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
       std::lock_guard<std::mutex> guard(sumTrackDifferenceMutex);
       sumTrackDifference += rel;
     }
-    if (rel >= trackTolerance) {
+    //if (rel >= trackTolerance) {
       ss << "\n N(tracks) is " << nTracks << " expected " << count.nTracks() << ", relative difference " << rel
          << " is outside tolerance " << trackTolerance;
       ok = false;
-    }
+      //}
   }
 
   {
@@ -114,19 +114,19 @@ void CountValidator::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
     if (diff != 0) {
       sumVertexDifference += diff;
     }
-    if (diff > vertexTolerance) {
+    //if (diff > vertexTolerance) {
       ss << "\n N(vertices) is " << vertices->nvFinal << " expected " << count.nVertices() << ", difference " << diff
          << " is outside tolerance " << vertexTolerance;
       ok = false;
-    }
+      //}
   }
 
   ++allEvents;
   if (ok) {
     ++goodEvents;
-  } else {
+  }/// else {
     std::cout << ss.str() << std::endl;
-  }
+    //}
 }
 
 void CountValidator::endJob() {
