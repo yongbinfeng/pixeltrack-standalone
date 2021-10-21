@@ -13,6 +13,10 @@ namespace gpuCalibPixel {
   using gpuClustering::invalidModuleId;
 
   // valid for run2
+  //constexpr float VCaltoElectronGain = 1;         // L2-4: 47 +- 4.7
+  //constexpr float VCaltoElectronGain_L1 = 1;      // L1:   49.6 +- 2.6
+  //constexpr float VCaltoElectronOffset = 0;      // L2-4: -60 +- 130
+  //constexpr float VCaltoElectronOffset_L1 = 0;  // L1:   -670 +- 220
   constexpr float VCaltoElectronGain = 47;         // L2-4: 47 +- 4.7
   constexpr float VCaltoElectronGain_L1 = 50;      // L1:   49.6 +- 2.6
   constexpr float VCaltoElectronOffset = -60;      // L2-4: -60 +- 130

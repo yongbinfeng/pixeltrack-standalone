@@ -22,18 +22,18 @@ PixelCPEFast::PixelCPEFast(std::string const &path) {
   {
     std::ifstream in(path, std::ios::binary);
     in.exceptions(std::ifstream::badbit | std::ifstream::failbit | std::ifstream::eofbit);
+    std::cout << "==> Filling CPE " << path.c_str() << std::endl;
     in.read(reinterpret_cast<char *>(&commonParamsGPU_), sizeof(pixelCPEforGPU::CommonParams));
     unsigned int ndetParams;
-    std::cout <<" ----> det params " << std::endl;
     in.read(reinterpret_cast<char *>(&ndetParams), sizeof(unsigned int));
     detParamsGPU_.resize(ndetParams);
-    std::cout <<" ----> det params GPU " << std::endl;
+    std::cout << "==> Filling CPE 0" << std::endl;
     in.read(reinterpret_cast<char *>(detParamsGPU_.data()), ndetParams * sizeof(pixelCPEforGPU::DetParams));
-    std::cout <<" ----> avg " << std::endl;
+    std::cout << "==> Filling CPE 1" << std::endl;
     in.read(reinterpret_cast<char *>(&averageGeometry_), sizeof(pixelCPEforGPU::AverageGeometry));
-    std::cout <<" ----> layer " << std::endl;
     in.read(reinterpret_cast<char *>(&layerGeometry_), sizeof(pixelCPEforGPU::LayerGeometry));
-    std::cout <<" ----> done " << std::endl;
+    std::cout << "==> Filling CPE Done " << std::endl;
+    for(int i0 = 0; i0 < 20; i0++) std::cout << "CPE NDET Params " << ndetParams << " -test- " << detParamsGPU_[i0].shiftX << " -- " << detParamsGPU_[i0].x0 << " -- " << detParamsGPU_[i0].y0 << " -- " << detParamsGPU_[i0].shiftY << std::endl;
   }
 
   cpuData_ = {

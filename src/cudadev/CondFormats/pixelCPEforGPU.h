@@ -37,19 +37,16 @@ namespace pixelCPEforGPU {
     float shiftY;
     float chargeWidthX;
     float chargeWidthY;
-    //uint16_t pixmx;  // max pix charge
+    uint16_t pixmx;  // max pix charge
 
     float x0, y0, z0;  // the vertex in the local coord of the detector
-    float sx[3], sy[3];  // the errors...
-
-    /* New stuff
+    //float sx[3], sy[3];
+    
     float apeXX, apeYY;  // ape^2
     uint8_t sx2, sy1, sy2;
     uint8_t sigmax[16], sigmax1[16], sigmay[16];  // in micron
     float xfact[5], yfact[5];
     int minCh[5];
-    */
-
     Frame frame;
   };
 
@@ -343,12 +340,12 @@ namespace pixelCPEforGPU {
     bool isBigX = phase1PixelTopology::isBigPixX(cp.minRow[ic]);
     bool isBigY = phase1PixelTopology::isBigPixY(cp.minCol[ic]);
 
-    //auto ch = cp.charge[ic];
-    auto bin = 1;
-    //for (; bin < 4; ++bin)
-    //  if (ch < detParams.minCh[bin + 1])
-    //    break;
-    //assert(bin < 5);
+    auto ch = cp.charge[ic];
+    auto bin = 0;
+    for (; bin < 4; ++bin)
+       if (ch < detParams.minCh[bin + 1])
+	 break;
+    assert(bin < 5);
     
     cp.status[ic].qBin = 4 - bin;
     cp.status[ic].isOneX = isOneX;
@@ -356,24 +353,26 @@ namespace pixelCPEforGPU {
     cp.status[ic].isOneY = isOneY;
     cp.status[ic].isBigY = (isOneY & isBigY) | isEdgeY;
 
-    //auto xoff = 81.f * comParams.thePitchX;
-    //int jx = std::min(15, std::max(0, int(16.f * (cp.xpos[ic] + xoff) / (2 * xoff))));
-    //auto toCM = [](uint8_t x) { return float(x) * 1.e-4; };
-    uint32_t ix = (0 == sx);
-    uint32_t iy = (0 == sy);
-    ix += (0 == sx) && phase1PixelTopology::isBigPixX(cp.minRow[ic]);
-    iy += (0 == sy) && phase1PixelTopology::isBigPixY(cp.minCol[ic]);
+    auto xoff = 81.f * comParams.thePitchX;
+    int jx = std::min(15, std::max(0, int(16.f * (cp.xpos[ic] + xoff) / (2 * xoff))));
+
+    auto toCM = [](uint8_t x) { return float(x) * 1.e-4; };
+
+    //uint32_t ix = (0 == sx);
+    //uint32_t iy = (0 == sy);
+    //ix += (0 == sx) && phase1PixelTopology::isBigPixX(cp.minRow[ic]);
+    //iy += (0 == sy) && phase1PixelTopology::isBigPixY(cp.minCol[ic]);
     
     if (not isEdgeX) {
-      cp.xerr[ic] = detParams.sx[ix];
-      //cp.xerr[ic] = isOneX ? toCM(isBigX ? detParams.sx2 : detParams.sigmax1[jx])
-      //                     : detParams.xfact[bin] * toCM(detParams.sigmax[jx]);
+      //cp.xerr[ic] = detParams.sx[ix];
+      cp.xerr[ic] = isOneX ? toCM(isBigX ? detParams.sx2 : detParams.sigmax1[jx])
+	: detParams.xfact[bin] * toCM(detParams.sigmax[jx]);
     }
 
-    //auto ey = cp.ysize[ic] > 8 ? detParams.sigmay[std::min(cp.ysize[ic] - 9, 15)] : detParams.sy1;
+    auto ey = cp.ysize[ic] > 8 ? detParams.sigmay[std::min(cp.ysize[ic] - 9, 15)] : detParams.sy1;
     if (not isEdgeY) {
-      cp.yerr[ic] = detParams.sy[iy];
-      //cp.yerr[ic] = isOneY ? toCM(isBigY ? detParams.sy2 : detParams.sy1) : detParams.yfact[bin] * toCM(ey);
+      //cp.yerr[ic] = detParams.sy[iy];
+      cp.yerr[ic] = isOneY ? toCM(isBigY ? detParams.sy2 : detParams.sy1) : detParams.yfact[bin] * toCM(ey);
     }
   }
 

@@ -75,7 +75,6 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     nHits_ = hits.get()[0];
     if(nHits_ > 35000) std::cout << "----> Too many Hits #Hits  " << nHits_ << " Max! 35000 " << std::endl;
     if(nHits_ > 35000) nHits_ = 35000;
-    //output_[pCount] = nHits_; pCount++;
     std::memcpy(output_+pCount,&nHits_,sizeof(uint32_t)); pCount += 4;
     static const unsigned maxNumModules = 2000;
     std::memcpy(output_ + pCount,hits.get()+1,    (maxNumModules+1)*sizeof(uint32_t)); pCount += 4*(maxNumModules+1);
@@ -89,7 +88,6 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     rawIdArr_  = digis.rawIdArrToHostAsync(ctx.stream());
     adc_       = digis.adcToHostAsync(ctx.stream());
     clus_      = digis.clusToHostAsync(ctx.stream());
-    //output_[pCount] = nDigis_; pCount++;
     std::memcpy(output_+pCount,&nDigis_,sizeof(uint32_t)); pCount += 4;
     std::memcpy(output_ + pCount,pdigi_.get()   ,nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
     std::memcpy(output_ + pCount,rawIdArr_.get(),nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;

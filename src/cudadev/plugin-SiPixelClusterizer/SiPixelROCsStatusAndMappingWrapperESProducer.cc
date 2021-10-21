@@ -34,6 +34,7 @@ void SiPixelROCsStatusAndMappingWrapperESProducer::produce(edm::EventSetup& even
     in.read(reinterpret_cast<char*>(&obj), sizeof(SiPixelROCsStatusAndMapping));
     unsigned int modToUnpDefSize;
     in.read(reinterpret_cast<char*>(&modToUnpDefSize), sizeof(unsigned int));
+    std::cout << " -cabling--> " << modToUnpDefSize << std::endl;
     std::vector<unsigned char> modToUnpDefault(modToUnpDefSize);
     in.read(reinterpret_cast<char*>(modToUnpDefault.data()), modToUnpDefSize);
     eventSetup.put(std::make_unique<SiPixelROCsStatusAndMappingWrapper>(obj, std::move(modToUnpDefault)));

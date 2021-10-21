@@ -56,7 +56,7 @@ CAHitNtupletGeneratorOnGPU::CAHitNtupletGeneratorOnGPU(edm::ProductRegistry& reg
                false,              // includeJumpingForwardDoublets
                true,              // earlyFishbone
                false,             // lateFishbone
-               true,              // idealConditions
+               false,              // idealConditions
                false,             // doStats
                true,              // doClusterCut
                true,              // doZ0Cut

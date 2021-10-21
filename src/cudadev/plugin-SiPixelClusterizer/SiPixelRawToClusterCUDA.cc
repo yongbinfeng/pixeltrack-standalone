@@ -60,7 +60,7 @@ SiPixelRawToClusterCUDA::SiPixelRawToClusterCUDA(edm::ProductRegistry& reg)
       clusterPutToken_(reg.produces<cms::cuda::Product<SiPixelClustersCUDA>>()),
       isRun2_(true),
       includeErrors_(true),
-      useQuality_(true),
+      useQuality_(false),
       clusterThresholds_{kSiPixelClusterThresholdsDefaultPhase1.layer1,
                          kSiPixelClusterThresholdsDefaultPhase1.otherLayers} {
   if (includeErrors_) {

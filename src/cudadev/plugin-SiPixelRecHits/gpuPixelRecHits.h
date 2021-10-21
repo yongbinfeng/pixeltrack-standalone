@@ -131,8 +131,8 @@ namespace gpuPixelRecHits {
 
       __syncthreads();
 
-      //auto pixmx = cpeParams->detParams(me).pixmx;
-      auto pixmx = std::numeric_limits<uint16_t>::max();
+      auto pixmx = cpeParams->detParams(me).pixmx;
+      //auto pixmx = std::numeric_limits<uint16_t>::max();
       for (int i = first; i < numElements; i += blockDim.x) {
         auto id = digis.moduleInd(i);
         if (id == invalidModuleId)
@@ -185,8 +185,8 @@ namespace gpuPixelRecHits {
         hits.clusterSizeX(h) = clusParams.xsize[ic];
         hits.clusterSizeY(h) = clusParams.ysize[ic];
 
-        hits.xerrLocal(h) = clusParams.xerr[ic] * clusParams.xerr[ic];//FIXME + cpeParams->detParams(me).apeXX;
-        hits.yerrLocal(h) = clusParams.yerr[ic] * clusParams.yerr[ic];//FIXME + cpeParams->detParams(me).apeYY;
+        hits.xerrLocal(h) = clusParams.xerr[ic] * clusParams.xerr[ic] + cpeParams->detParams(me).apeXX;//FIXME + cpeParams->detParams(me).apeXX;
+        hits.yerrLocal(h) = clusParams.yerr[ic] * clusParams.yerr[ic] + cpeParams->detParams(me).apeYY;//FIXME + cpeParams->detParams(me).apeYY;
 
         // keep it local for computations
         float xg, yg, zg;

@@ -26,6 +26,7 @@ void SiPixelGainCalibrationForHLTGPUESProducer::produce(edm::EventSetup& eventSe
   in.read(reinterpret_cast<char*>(&nbytes), sizeof(unsigned int));
   std::vector<char> gainData(nbytes);
   in.read(gainData.data(), nbytes);
+  std::cout << " -gain- " << nbytes << " -- " <<  gain.pedPrecision_ << " -- " << int(gainData.data()[0]) << std::endl;
   eventSetup.put(std::make_unique<SiPixelGainCalibrationForHLTGPU>(gain, std::move(gainData)));
 }
 
