@@ -86,9 +86,6 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
   {
 
     auto const& hits = iEvent.get(hitsToken_);
-    auto const& pdigis = iEvent.get(digiToken_);
-    cms::cuda::ScopedContextProduce ctx{pdigis};
-    auto const& digis = ctx.get(iEvent, digiToken_);
     nHits_ = hits.get()[0];
     if(nHits_ > 35000) std::cout << "----> Too many Hits #Hits  " << nHits_ << " Max! 35000 " << std::endl;
     if(nHits_ > 35000) nHits_ = 35000;
@@ -96,7 +93,10 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     static const unsigned maxNumModules = 2000;
     std::memcpy(output_ + pCount,hits.get()+1,    (maxNumModules+1)*sizeof(uint32_t)); pCount += 4*(maxNumModules+1);
     std::memcpy(output_ + pCount,hits.get()+maxNumModules+2, (4*nHits_)*sizeof(float)); pCount+=4*(4*nHits_);
-    
+
+    auto const& pdigis = iEvent.get(digiToken_);
+    cms::cuda::ScopedContextProduce ctx{pdigis};
+    auto const& digis = ctx.get(iEvent, digiToken_);
     nDigis_    = digis.nDigis();
     if(nDigis_ > 150000) std::cout << "----> Too many Digis #Digis  " << nDigis_ << " Max! " << nDigis_ << std::endl;
     if(nDigis_ > 150000) nDigis_ = 150000;
@@ -104,7 +104,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     rawIdArr_  = digis.rawIdArrToHostAsync(ctx.stream());
     adc_       = digis.adcToHostAsync(ctx.stream());
     clus_      = digis.clusToHostAsync(ctx.stream());
-    std::memcpy(output_+pCount,&nDigis_,sizeof(uint32_t)); pCount += 4;
+    std::memcpy(output_ + pCount,&nDigis_,sizeof(uint32_t)); pCount += 4;
     std::memcpy(output_ + pCount,pdigi_.get()   ,nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
     std::memcpy(output_ + pCount,rawIdArr_.get(),nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
     std::memcpy(output_ + pCount,adc_.get()     ,nDigis_*sizeof(uint16_t)); pCount+=2*nDigis_;
@@ -112,6 +112,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     
      auto const& pdigiErrors = iEvent.get(digiErrorToken_);
      nErrors_ = pdigiErrors.size();
+     if(nErrors_ > 0) std::cout << " ---> Found an Error " << std::endl;
      std::memcpy(output_+pCount,&nErrors_,sizeof(uint32_t)); pCount += 4;
      std::memcpy(output_+pCount,pdigiErrors.errorVector().data(),10*nErrors_);     pCount += 10*nErrors_;
   }

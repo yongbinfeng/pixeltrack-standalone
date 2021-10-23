@@ -25,7 +25,6 @@ void SiPixelROCsStatusAndMappingWrapperESProducer::produce(edm::EventSetup& even
     in.read(reinterpret_cast<char*>(&nfeds), sizeof(unsigned));
     std::vector<unsigned int> fedIds(nfeds);
     in.read(reinterpret_cast<char*>(fedIds.data()), sizeof(unsigned int) * nfeds);
-    for(unsigned int i0 = 0; i0 < nfeds; i0++) std::cout << " ---> feds " << nfeds << " -- " << fedIds.data()[i0] << std::endl;
     eventSetup.put(std::make_unique<SiPixelFedIds>(std::move(fedIds)));
   }
   {
@@ -35,10 +34,8 @@ void SiPixelROCsStatusAndMappingWrapperESProducer::produce(edm::EventSetup& even
     in.read(reinterpret_cast<char*>(&obj), sizeof(SiPixelROCsStatusAndMapping));
     unsigned int modToUnpDefSize;
     in.read(reinterpret_cast<char*>(&modToUnpDefSize), sizeof(unsigned int));
-    std::cout << " -cabling--> " << modToUnpDefSize << std::endl;
     std::vector<unsigned char> modToUnpDefault(modToUnpDefSize);
     in.read(reinterpret_cast<char*>(modToUnpDefault.data()), modToUnpDefSize);
-    for(unsigned int i0 = 0; i0 < 150; i0+=384) std::cout << " A---> " << obj.fed[i0] << " -- " << obj.link[i0] << " -- " << obj.roc[i0] << " -- " << obj.moduleId[i0] << std::endl;
     eventSetup.put(std::make_unique<SiPixelROCsStatusAndMappingWrapper>(obj, std::move(modToUnpDefault)));
   }
 }

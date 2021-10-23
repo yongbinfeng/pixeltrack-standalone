@@ -27,13 +27,9 @@ PixelCPEFast::PixelCPEFast(std::string const &path) {
     unsigned int ndetParams;
     in.read(reinterpret_cast<char *>(&ndetParams), sizeof(unsigned int));
     detParamsGPU_.resize(ndetParams);
-    std::cout << "==> Filling CPE 0" << std::endl;
     in.read(reinterpret_cast<char *>(detParamsGPU_.data()), ndetParams * sizeof(pixelCPEforGPU::DetParams));
-    std::cout << "==> Filling CPE 1" << std::endl;
     in.read(reinterpret_cast<char *>(&averageGeometry_), sizeof(pixelCPEforGPU::AverageGeometry));
     in.read(reinterpret_cast<char *>(&layerGeometry_), sizeof(pixelCPEforGPU::LayerGeometry));
-    std::cout << "==> Filling CPE Done " << std::endl;
-    for(int i0 = 0; i0 < 20; i0++) std::cout << "CPE NDET Params " << ndetParams << " -test- " << detParamsGPU_[i0].shiftX << " -- " << detParamsGPU_[i0].x0 << " -- " << detParamsGPU_[i0].y0 << " -- " << detParamsGPU_[i0].shiftY << std::endl;
   }
 
   cpuData_ = {
