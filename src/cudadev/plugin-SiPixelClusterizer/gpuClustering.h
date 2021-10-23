@@ -218,13 +218,21 @@ namespace gpuClustering {
               auto l = nn[k][kk];
               auto m = l + firstPixel;
               assert(m != i);
-              auto old = atomicMin(&clusterId[m], clusterId[i]); //FIX BLOCK
+	      //#if !defined __CUDA_ARCH__ || __CUDA_ARCH__ >= 600
+              auto old = atomicMin_block(&clusterId[m], clusterId[i]); //FIX BLOCK
+	      //#else
+              //auto old = atomicMin(&clusterId[m], clusterId[i]);
+	      //#endif
               // do we need memory fence?
               if (old != clusterId[i]) {
                 // end the loop only if no changes were applied
                 more = true;
               }
-              atomicMin(&clusterId[i], old); //FIX BLOC
+	      //#if !defined __CUDA_ARCH__ || __CUDA_ARCH__ >= 600
+              atomicMin_block(&clusterId[i], old); //FIX BLOC
+	      //#else
+	      //atomicMin(&clusterId[i], old);
+	      //#endif
             }  // nnloop
           }    // pixel loop
         }
@@ -275,7 +283,7 @@ namespace gpuClustering {
       // adjust the cluster id to be a positive value starting from 0
       for (int i = first; i < msize; i += blockDim.x) {
         if (id[i] == invalidModuleId) {  // skip invalid pixels
-          clusterId[i] = -9999;
+          clusterId[i] = invalidClusterId;
           continue;
         }
         clusterId[i] = -clusterId[i] - 1;
