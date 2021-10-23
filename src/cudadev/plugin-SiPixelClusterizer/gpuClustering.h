@@ -218,21 +218,21 @@ namespace gpuClustering {
               auto l = nn[k][kk];
               auto m = l + firstPixel;
               assert(m != i);
-	      //#if !defined __CUDA_ARCH__ || __CUDA_ARCH__ >= 600
-              auto old = atomicMin_block(&clusterId[m], clusterId[i]); //FIX BLOCK
-	      //#else
-              //auto old = atomicMin(&clusterId[m], clusterId[i]);
-	      //#endif
+	      #if !defined __CUDA_ARCH__ || __CUDA_ARCH__ >= 600
+                auto old = atomicMin_block(&clusterId[m], clusterId[i]); //FIX BLOCK
+	      #else
+		auto old = atomicMin(&clusterId[m], clusterId[i]);
+	      #endif
               // do we need memory fence?
               if (old != clusterId[i]) {
                 // end the loop only if no changes were applied
                 more = true;
               }
-	      //#if !defined __CUDA_ARCH__ || __CUDA_ARCH__ >= 600
-              atomicMin_block(&clusterId[i], old); //FIX BLOC
-	      //#else
-	      //atomicMin(&clusterId[i], old);
-	      //#endif
+	      #if !defined __CUDA_ARCH__ || __CUDA_ARCH__ >= 600
+                atomicMin_block(&clusterId[i], old); //FIX BLOC
+	      #else
+		atomicMin(&clusterId[i], old);
+	      #endif
             }  // nnloop
           }    // pixel loop
         }

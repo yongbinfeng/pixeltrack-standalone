@@ -87,7 +87,7 @@ namespace cms {
       *a = std::min(*a, T1(b));
       return ret;
     }
-
+    
     template <typename T1, typename T2>
     T1 atomicMin_block(T1* a, T2 b) {
       return atomicMin(a, b);
