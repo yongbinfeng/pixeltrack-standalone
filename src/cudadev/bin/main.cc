@@ -115,6 +115,12 @@ int main(int argc, char** argv) {
                  "SiPixelROCsStatusAndMappingWrapperESProducer",
                  "PixelCPEFastESProducer"};
     if (transfer) {
+      auto rhpos = std::find(edmodules.begin(), edmodules.end(), "SiPixelRecHitCUDA");
+      assert(rhpos != edmodules.end());
+      edmodules.insert(rhpos + 1, "SiPixelRecHitFromCUDA");
+      auto rhfcpos = std::find(edmodules.begin(), edmodules.end(), "SiPixelRecHitFromCUDA");
+      assert(rhfcpos != edmodules.end());
+      edmodules.insert(rhfcpos + 1, "SiPixelDigiErrorsSoAFromCUDA");
       auto capos = std::find(edmodules.begin(), edmodules.end(), "CAHitNtupletCUDA");
       assert(capos != edmodules.end());
       edmodules.insert(capos + 1, "PixelTrackSoAFromCUDA");
@@ -123,7 +129,7 @@ int main(int argc, char** argv) {
       edmodules.insert(vertpos + 1, "PixelVertexSoAFromCUDA");
     }
     if (validation) {
-      edmodules.emplace_back("CountValidator");
+      edmodules.emplace_back("CountValidatorSimple");
     }
     if (histogram) {
       edmodules.emplace_back("HistoValidator");

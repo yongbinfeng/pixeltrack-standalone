@@ -28,6 +28,7 @@ public:
   uint8_t* getOutput();
   void produce(edm::Event& iEvent, const edm::EventSetup& iSetup) override;
   //void acquire(const edm::Event& iEvent,const edm::EventSetup& iSetup,edm::WaitingTaskWithArenaHolder waitingTaskHolder) override;
+  uint32_t getSize();
   
   using HMSstorage = HostProduct<uint32_t[]>;
   
@@ -49,17 +50,21 @@ private:
   cms::cuda::host::unique_ptr<uint32_t[]> rawIdArr_;
   cms::cuda::host::unique_ptr<uint16_t[]> adc_;
   cms::cuda::host::unique_ptr<int32_t[]>  clus_;
+  uint32_t size_;
   uint8_t* output_;
-
+  bool suppressDigis_;
+  bool suppressTracks_;
 };
 
 CountValidatorSimple::CountValidatorSimple(edm::ProductRegistry& reg)
   : hitsToken_(reg.consumes<HMSstorage>()),
-  digiToken_(reg.consumes<cms::cuda::Product<SiPixelDigisCUDA>>()),
-  digiErrorToken_(reg.consumes<SiPixelErrorsSoA>()),
-  clusterToken_(reg.consumes<cms::cuda::Product<SiPixelClustersCUDA>>()),
-  trackToken_(reg.consumes<PixelTrackHeterogeneous>()),
-  vertexToken_(reg.consumes<ZVertexHeterogeneous>()) {
+    digiToken_(reg.consumes<cms::cuda::Product<SiPixelDigisCUDA>>()),
+    digiErrorToken_(reg.consumes<SiPixelErrorsSoA>()),
+    clusterToken_(reg.consumes<cms::cuda::Product<SiPixelClustersCUDA>>()),
+    trackToken_(reg.consumes<PixelTrackHeterogeneous>()),
+    vertexToken_(reg.consumes<ZVertexHeterogeneous>()),
+    suppressDigis_(true),
+    suppressTracks_(true){
   output_ = new uint8_t[7200000];
   //output_ = new uint32_t[5*150000+32768*36+1+2000+3*35000];
   //output_.reset(new uint32_t(5*150000+32768*36+1+2000+3*35000));
@@ -104,11 +109,56 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     rawIdArr_  = digis.rawIdArrToHostAsync(ctx.stream());
     adc_       = digis.adcToHostAsync(ctx.stream());
     clus_      = digis.clusToHostAsync(ctx.stream());
-    std::memcpy(output_ + pCount,&nDigis_,sizeof(uint32_t)); pCount += 4;
-    std::memcpy(output_ + pCount,pdigi_.get()   ,nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
-    std::memcpy(output_ + pCount,rawIdArr_.get(),nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
-    std::memcpy(output_ + pCount,adc_.get()     ,nDigis_*sizeof(uint16_t)); pCount+=2*nDigis_;
-    std::memcpy(output_ + pCount,clus_.get()    ,nDigis_*sizeof(int32_t));  pCount+=4*nDigis_;
+    if(!suppressDigis_) { 
+      std::memcpy(output_ + pCount,&nDigis_,sizeof(uint32_t)); pCount += 4;
+      std::memcpy(output_ + pCount,pdigi_.get()   ,nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
+      std::memcpy(output_ + pCount,rawIdArr_.get(),nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
+      std::memcpy(output_ + pCount,adc_.get()     ,nDigis_*sizeof(uint16_t)); pCount+=2*nDigis_;
+      std::memcpy(output_ + pCount,clus_.get()    ,nDigis_*sizeof(int32_t));  pCount+=4*nDigis_;
+    } else { 
+      std::vector<uint32_t> pdigi;
+      std::vector<uint32_t> rawIdArr;
+      std::vector<uint16_t> adc;
+      std::vector<int32_t>  clus;
+      uint32_t pOldDigi = 0;
+      uint32_t pOldRawId = 0;
+      uint16_t pADC      = 0;
+      int32_t  pOldClus = 0;
+
+      uint32_t* pdigiArrs = new uint32_t[nDigis_];
+      uint32_t* rawIdArrs = new uint32_t[nDigis_];
+      uint16_t* adcArrs   = new uint16_t[nDigis_];
+      int32_t*  clusArrs  = new int32_t [nDigis_];
+
+      std::memcpy(pdigiArrs,pdigi_.get()   ,nDigis_*sizeof(uint32_t)); 
+      std::memcpy(rawIdArrs,rawIdArr_.get(),nDigis_*sizeof(uint32_t)); 
+      std::memcpy(adcArrs,  adc_.get()     ,nDigis_*sizeof(uint16_t)); 
+      std::memcpy(clusArrs, clus_.get()    ,nDigis_*sizeof(int32_t)); 
+      for(uint32_t i0 = 0; i0 < nDigis_+1; i0++) { 
+	if(pOldRawId != rawIdArrs[i0] || pOldClus != clusArrs[i0] ) { // || pOldDigi != pdigi_[i0]) {   
+	  if(i0 > 0) { 
+	    pdigi.push_back(pOldDigi); 
+	    rawIdArr.push_back(pOldRawId);
+	    adc.push_back (pADC);
+	    clus.push_back(pOldClus);
+	  }
+	  if (i0 < nDigis_) { 
+	    pOldDigi  = pdigiArrs[i0];
+	    pOldRawId = rawIdArrs[i0];
+	    pADC      = adcArrs[i0];
+	    pOldClus  = clusArrs[i0];
+	  }
+	} else { 
+	  if(adcArrs[i0] + pADC < 65536) pADC += adc_.get()[i0];
+	}
+      }
+      nDigis_ = pdigi.size();
+      std::memcpy(output_ + pCount,&nDigis_,sizeof(uint32_t)); pCount += 4;
+      std::memcpy(output_ + pCount,pdigi.data()   ,nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
+      std::memcpy(output_ + pCount,rawIdArr.data(),nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
+      std::memcpy(output_ + pCount,adc.data()     ,nDigis_*sizeof(uint16_t)); pCount+=2*nDigis_;
+      std::memcpy(output_ + pCount,clus.data()    ,nDigis_*sizeof(int32_t));  pCount+=4*nDigis_;
+    }
 
     auto const& pdigiErrors = iEvent.get(digiErrorToken_);
     nErrors_ = pdigiErrors.size();
@@ -116,10 +166,83 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     std::memcpy(output_+pCount,&nErrors_,sizeof(uint32_t)); pCount += 4;
     std::memcpy(output_+pCount,pdigiErrors.errorVector().data(),10*nErrors_);     pCount += 10*nErrors_;
   }
-  {
+  if( suppressTracks_ ) {
+    auto const& tracks = iEvent.get(trackToken_);
+    auto const& vertices = iEvent.get(vertexToken_);
+    uint32_t nTracks = tracks->stride();//25000;
+    
+    unsigned int pSize = 2000;
+    float   chi2   [pSize];
+    uint8_t quality[pSize];
+    float   eta    [pSize];
+    float   pt     [pSize];
+    float *stateAtBS = new float[pSize*5];
+    float *stateAtBSCov = new float[pSize*15];
+    uint32_t *hitsRaw = new uint32_t[pSize*5];
+    int32_t  hitsOff[pSize+1];
+    uint32_t *detsRaw = new uint32_t[pSize*5];
+    int32_t  detsOff[pSize+1];
+    uint32_t pInt = 0;
+    int16_t idv[pSize];
+    uint32_t pHitCheck = 0;
+    uint32_t pDetCheck = 0; 
+    for(unsigned  i0 = 0; i0 < nTracks; i0++) {
+      if(tracks->quality(i0) > pixelTrack::Quality::dup && tracks->nHits(i0) > 0 && pInt < pSize-1) {
+	chi2[pInt]    = tracks->chi2(i0);
+	quality[pInt] = uint8_t(tracks->quality(i0));
+	eta[pInt]     = tracks->eta(i0);
+	pt[pInt]      = tracks->pt(i0);
+	for(int i1 = 0; i1 < 5; i1++) { 
+	  stateAtBS[i1*pSize + pInt] = tracks->stateAtBS.state(i0)(i1);
+	}
+	for(int i1 = 0; i1 < 15; i1++) { 
+	  stateAtBSCov[i1*pSize + pInt] = tracks->stateAtBS.covariance(i0)(i1);
+	}
+	//std::memcpy(stateAtBSCov+pInt*15,tracks->stateAtBS.covariance(0).data()+i0*15,sizeof(float)*15);
+	uint32_t pHit = tracks->hitIndices.size(i0);
+	uint32_t pDet = tracks->detIndices.size(i0);
+	std::memcpy(hitsRaw + pHitCheck,tracks->hitIndices.begin() + tracks->hitIndices.off.data()[i0],sizeof(uint32_t)*pHit);
+	std::memcpy(detsRaw + pDetCheck,tracks->detIndices.begin() + tracks->detIndices.off.data()[i0],sizeof(uint32_t)*pDet);      
+	hitsOff[pInt] = pHitCheck;
+	detsOff[pInt] = pDetCheck;
+	pHitCheck    += pHit;
+	pDetCheck    += pDet;
+	idv[pInt]     = vertices->idv[i0];
+	pInt++;
+      }
+    }
+    hitsOff[pInt]  = pHitCheck;
+    detsOff[pInt]  = pDetCheck;
+    nTracks = pInt;
+    std::memcpy(output_ + pCount,&nTracks,sizeof(uint32_t)); pCount += 4;
+    std::memcpy(output_ + pCount,chi2,        nTracks*sizeof(float));             pCount+=4*nTracks;
+    std::memcpy(output_ + pCount,quality,     nTracks*sizeof(uint8_t));           pCount+=nTracks;
+    std::memcpy(output_ + pCount,eta,         nTracks*sizeof(float));             pCount+=4*nTracks;
+    std::memcpy(output_ + pCount,pt,          nTracks*sizeof(float));             pCount+=4*nTracks;
+    for(unsigned i1 = 0; i1 < 5; i1++) { 
+      std::memcpy(output_ + pCount,stateAtBS+i1*pSize,   nTracks*sizeof(float));  pCount+=(4*nTracks);
+    }
+    for(unsigned i1 = 0; i1 < 15; i1++) { 
+      std::memcpy(output_ + pCount,stateAtBSCov+i1*pSize,nTracks*sizeof(float));  pCount+=(4*nTracks);
+    }
+    std::memcpy(output_ + pCount,hitsRaw,    5*nTracks*sizeof(uint32_t));         pCount+=4*nTracks*5;
+    std::memcpy(output_ + pCount,hitsOff,    (nTracks+1)*sizeof(int32_t));        pCount+=4*(nTracks+1);
+    std::memcpy(output_ + pCount,detsRaw,    5*nTracks*sizeof(uint32_t));         pCount+=4*nTracks*5;
+    std::memcpy(output_ + pCount,detsOff,    (nTracks+1)*sizeof(int32_t));        pCount+=4*(nTracks+1);
+
+    uint32_t nVtx = vertices->nvFinal;
+    std::memcpy(output_ + pCount,&(vertices->nvFinal),sizeof(uint32_t)); pCount += 4;
+    std::memcpy(output_ + pCount,idv              ,nTracks*sizeof(int16_t));   pCount+=2*nTracks;
+    std::memcpy(output_ + pCount,vertices->zv     ,nVtx*sizeof(float));        pCount+=4*nVtx;
+    std::memcpy(output_ + pCount,vertices->wv     ,nVtx*sizeof(float));        pCount+=4*nVtx;
+    std::memcpy(output_ + pCount,vertices->chi2   ,nVtx*sizeof(float));        pCount+=4*nVtx;
+    std::memcpy(output_ + pCount,vertices->ptv2   ,nVtx*sizeof(float));        pCount+=4*nVtx;
+    std::memcpy(output_ + pCount,vertices->ndof   ,nVtx*sizeof(int32_t));      pCount+=4*nVtx;
+    std::memcpy(output_ + pCount,vertices->sortInd,nVtx*sizeof(uint16_t));     pCount+=2*nVtx;
+  } else { 
+    
     auto const& tracks = iEvent.get(trackToken_);
     uint32_t nTracks = tracks->stride();
-    //output_[pCount] = nTracks; pCount++;
     std::memcpy(output_ + pCount,&nTracks,sizeof(uint32_t)); pCount += 4;
     std::memcpy(output_ + pCount,tracks->chi2.data()     ,nTracks*sizeof(float));                  pCount+=4*nTracks;
     std::memcpy(output_ + pCount,tracks->qualityData()   ,nTracks*sizeof(uint8_t));                pCount+=nTracks;
@@ -133,11 +256,9 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     std::memcpy(output_ + pCount,tracks->detIndices.off.data(),    (nTracks+1)*sizeof(int32_t));        pCount+=4*(nTracks+1);
 
     auto const& vertices = iEvent.get(vertexToken_);
-    static constexpr uint32_t MAXTRACKS = 32 * 1024;
     static constexpr uint32_t MAXVTX = 1024;
-    //output_[pCount] = nvtx; pCount++;
     std::memcpy(output_ + pCount,&(vertices->nvFinal),sizeof(uint32_t)); pCount += 4;
-    std::memcpy(output_ + pCount,vertices->idv    ,MAXTRACKS*sizeof(int16_t));   pCount+=2*MAXTRACKS;
+    std::memcpy(output_ + pCount,vertices->idv    ,nTracks*sizeof(int16_t));     pCount+=2*nTracks;
     std::memcpy(output_ + pCount,vertices->zv     ,MAXVTX*sizeof(float));        pCount+=4*MAXVTX;
     std::memcpy(output_ + pCount,vertices->wv     ,MAXVTX*sizeof(float));        pCount+=4*MAXVTX;
     std::memcpy(output_ + pCount,vertices->chi2   ,MAXVTX*sizeof(float));        pCount+=4*MAXVTX;
@@ -149,9 +270,13 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
   if (ok) {
     ++goodEvents;
   }
+  size_ = pCount;
 }
 uint8_t* CountValidatorSimple::getOutput() {
   return output_;
+}
+uint32_t CountValidatorSimple::getSize() {
+  return size_;
 }
 void CountValidatorSimple::endJob() {
   if (allEvents == goodEvents) {
