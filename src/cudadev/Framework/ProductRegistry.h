@@ -1,6 +1,7 @@
 #ifndef ProductRegistry_h
 #define ProductRegistry_h
 
+#include <iostream>
 #include <memory>
 #include <set>
 #include <stdexcept>
