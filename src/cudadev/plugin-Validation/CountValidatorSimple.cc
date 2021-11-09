@@ -44,9 +44,7 @@ private:
 
   const edm::EDPutTokenT<OutputStorage> outputToken_;
   const edm::EDPutTokenT<SizeStorage> sizeToken_;
-  
-  //uint64_t size_;
-  //int8_t* output_;
+
   bool suppressDigis_;
   bool suppressTracks_;
 };
@@ -62,11 +60,10 @@ CountValidatorSimple::CountValidatorSimple(edm::ProductRegistry& reg)
     sizeToken_(reg.produces<SizeStorage>()),
     suppressDigis_(false),
     suppressTracks_(true){
-  //output_ = new int8_t[7200000];
 }
 void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   unsigned int pCount = 0;
-  auto output_ = std::make_unique<int8_t[]>(2500000);
+  auto output_ = std::make_unique<int8_t[]>(7500000);
   auto size_   = std::make_unique<uint64_t[]>(1);
   {
 
@@ -167,8 +164,8 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     uint8_t quality[pSize];
     float   eta    [pSize];
     float   pt     [pSize];
-    float *stateAtBS = new float[pSize*5];
-    float *stateAtBSCov = new float[pSize*15];
+    float   stateAtBS   [pSize*5];
+    float   stateAtBSCov[pSize*15];
     uint32_t *hitsRaw = new uint32_t[pSize*5];
     int32_t  hitsOff[pSize+1];
     uint32_t *detsRaw = new uint32_t[pSize*5];
@@ -219,7 +216,9 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     std::memcpy(output_.get() + pCount,hitsOff,    (nTracks+1)*sizeof(int32_t));        pCount+=4*(nTracks+1);
     std::memcpy(output_.get() + pCount,detsRaw,    5*nTracks*sizeof(uint32_t));         pCount+=4*nTracks*5;
     std::memcpy(output_.get() + pCount,detsOff,    (nTracks+1)*sizeof(int32_t));        pCount+=4*(nTracks+1);
-
+    delete hitsRaw;
+    delete detsRaw;
+    
     uint32_t nVtx = vertices->nvFinal;
     std::memcpy(output_.get() + pCount,&(vertices->nvFinal),sizeof(uint32_t)); pCount += 4;
     std::memcpy(output_.get() + pCount,idv              ,nTracks*sizeof(int16_t));   pCount+=2*nTracks;
