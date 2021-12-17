@@ -21,17 +21,18 @@ namespace {
   std::atomic<int> goodEvents{0};
 }  // namespace
 
-class CountValidatorSimple : public edm::EDProducer {
+class CountValidatorSimple : public edm::EDProducerExternalWork {
 public:
   explicit CountValidatorSimple(edm::ProductRegistry& reg);
   int8_t* getOutput();
   void produce(edm::Event& iEvent, const edm::EventSetup& iSetup) override;
+  void acquire(const edm::Event& iEvent,const edm::EventSetup& iSetup,edm::WaitingTaskWithArenaHolder waitingTaskHolder) override;
   uint64_t getSize();
   
-  using HMSstorage    = HostProduct<uint32_t[]>;
+  using HMSstorage = HostProduct<uint32_t[]>;
   using OutputStorage = HostProduct<int8_t[]>;
   using SizeStorage   = HostProduct<uint64_t[]>;
-  
+
 private:
   void endJob() override;
 
@@ -41,12 +42,19 @@ private:
   edm::EDGetTokenT<cms::cuda::Product<SiPixelClustersCUDA>> clusterToken_;
   edm::EDGetTokenT<PixelTrackHeterogeneous> trackToken_;
   edm::EDGetTokenT<ZVertexHeterogeneous> vertexToken_;
-
   const edm::EDPutTokenT<OutputStorage> outputToken_;
   const edm::EDPutTokenT<SizeStorage> sizeToken_;
 
+  //uint64_t size_;
+  //int8_t* output_;
   bool suppressDigis_;
   bool suppressTracks_;
+
+  cms::cuda::host::unique_ptr<uint32_t[]> pdigi_;
+  cms::cuda::host::unique_ptr<uint32_t[]> rawIdArr_;
+  cms::cuda::host::unique_ptr<uint16_t[]> adc_;
+  cms::cuda::host::unique_ptr<int32_t[]>  clus_;
+  uint32_t nDigis_;
 };
 
 CountValidatorSimple::CountValidatorSimple(edm::ProductRegistry& reg)
@@ -60,20 +68,28 @@ CountValidatorSimple::CountValidatorSimple(edm::ProductRegistry& reg)
     sizeToken_(reg.produces<SizeStorage>()),
     suppressDigis_(false),
     suppressTracks_(true){
+  //output_ = new int8_t[7200000];
 }
+
+void CountValidatorSimple::acquire(const edm::Event& iEvent,
+				   const edm::EventSetup& iSetup,
+				   edm::WaitingTaskWithArenaHolder waitingTaskHolder) {
+  cms::cuda::ScopedContextAcquire ctx{iEvent.streamID(), std::move(waitingTaskHolder)};
+  const auto& digis = ctx.get(iEvent, digiToken_);
+  pdigi_     = digis.pdigiToHostAsync(ctx.stream());
+  rawIdArr_  = digis.rawIdArrToHostAsync(ctx.stream());
+  adc_       = digis.adcToHostAsync(ctx.stream());
+  clus_      = digis.clusToHostAsync(ctx.stream());
+  nDigis_    = digis.nDigis();
+}
+
 void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
-  unsigned int pCount = 0;
   auto output_ = std::make_unique<int8_t[]>(7500000);
   auto size_   = std::make_unique<uint64_t[]>(1);
+  unsigned int pCount = 0;
   {
-
-    uint32_t  nDigis_;
     uint32_t  nErrors_;
     uint32_t  nHits_;
-    cms::cuda::host::unique_ptr<uint32_t[]> pdigi_;
-    cms::cuda::host::unique_ptr<uint32_t[]> rawIdArr_;
-    cms::cuda::host::unique_ptr<uint16_t[]> adc_;
-    cms::cuda::host::unique_ptr<int32_t[]>  clus_;
     
     auto const& hits = iEvent.get(hitsToken_);
     nHits_ = hits.get()[0];
@@ -84,22 +100,23 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     std::memcpy(output_.get() + pCount,hits.get()+1,    (maxNumModules+1)*sizeof(uint32_t)); pCount += 4*(maxNumModules+1);
     std::memcpy(output_.get() + pCount,hits.get()+maxNumModules+2, (4*nHits_)*sizeof(float)); pCount+=4*(4*nHits_);
 
-    auto const& pdigis = iEvent.get(digiToken_);
-    cms::cuda::ScopedContextProduce ctx{pdigis};
-    auto const& digis = ctx.get(iEvent, digiToken_);
-    nDigis_    = digis.nDigis();
+    //auto const& pdigis = iEvent.get(digiToken_);
+    //cms::cuda::ScopedContextProduce ctx{pdigis};
+    //auto const& digis = ctx.get(iEvent, digiToken_);
+    //nDigis_    = digis.nDigis();
     if(nDigis_ > 150000) std::cout << "----> Too many Digis #Digis  " << nDigis_ << " Max! " << nDigis_ << std::endl;
     if(nDigis_ > 150000) nDigis_ = 150000;
-    pdigi_     = digis.pdigiToHostAsync(ctx.stream());
-    rawIdArr_  = digis.rawIdArrToHostAsync(ctx.stream());
-    adc_       = digis.adcToHostAsync(ctx.stream());
-    clus_      = digis.clusToHostAsync(ctx.stream());
+    //pdigi_     = digis.pdigiToHostAsync(ctx.stream());
+    //rawIdArr_  = digis.rawIdArrToHostAsync(ctx.stream());
+    //adc_       = digis.adcToHostAsync(ctx.stream());
+    //clus_      = digis.clusToHostAsync(ctx.stream());
     if(!suppressDigis_) { 
       std::memcpy(output_.get() + pCount,&nDigis_,sizeof(uint32_t)); pCount += 4;
       std::memcpy(output_.get() + pCount,pdigi_.get()   ,nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
       std::memcpy(output_.get() + pCount,rawIdArr_.get(),nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
       std::memcpy(output_.get() + pCount,adc_.get()     ,nDigis_*sizeof(uint16_t)); pCount+=2*nDigis_;
       std::memcpy(output_.get() + pCount,clus_.get()    ,nDigis_*sizeof(int32_t));  pCount+=4*nDigis_;
+      std::cout << "---> server" << nDigis_ << " -- " << pdigi_[0] << " -- " << rawIdArr_[0] << " -- " << adc_[0] << " -- " << clus_[0] << std::endl;
     } else { 
       uint32_t pOldDigi = 0;
       uint32_t pOldRawId = 0;
@@ -115,7 +132,6 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
       uint32_t rawIdArrs[150000];
       uint16_t adcArrs  [150000];
       int32_t  clusArrs [150000];
-      
       std::memcpy(pdigiArrs,pdigi_.get()   ,nDigis_*sizeof(uint32_t)); 
       std::memcpy(rawIdArrs,rawIdArr_.get(),nDigis_*sizeof(uint32_t)); 
       std::memcpy(adcArrs,  adc_.get()     ,nDigis_*sizeof(uint16_t)); 
@@ -146,6 +162,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
       std::memcpy(output_.get() + pCount,rawIdArr,nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
       std::memcpy(output_.get() + pCount,adc     ,nDigis_*sizeof(uint16_t)); pCount+=2*nDigis_;
       std::memcpy(output_.get() + pCount,clus    ,nDigis_*sizeof(int32_t));  pCount+=4*nDigis_;
+      //std::cout << "---> server" << nDigis_ << " -- " << pdigi[0] << " -- " << rawIdArr[0] << " -- " << adc[0] << " -- " << clus[0] << std::endl;
     }
 
     auto const& pdigiErrors = iEvent.get(digiErrorToken_);
@@ -164,8 +181,8 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     uint8_t quality[pSize];
     float   eta    [pSize];
     float   pt     [pSize];
-    float   stateAtBS   [pSize*5];
-    float   stateAtBSCov[pSize*15];
+    float stateAtBS[pSize*5];
+    float stateAtBSCov[pSize*15];
     uint32_t *hitsRaw = new uint32_t[pSize*5];
     int32_t  hitsOff[pSize+1];
     uint32_t *detsRaw = new uint32_t[pSize*5];
@@ -255,9 +272,16 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     std::memcpy(output_.get() + pCount,vertices->ndof   ,MAXVTX*sizeof(int32_t));      pCount+=4*MAXVTX;
     std::memcpy(output_.get() + pCount,vertices->sortInd,MAXVTX*sizeof(uint16_t));     pCount+=2*MAXVTX;
   }
+  //std::cout << " ---> CVS size " << pCount << std::endl;
+  //size_ = pCount;
   iEvent.emplace(outputToken_, std::move(output_));
   size_.get()[0] = pCount;
   iEvent.emplace(sizeToken_, std::move(size_));
+
+  pdigi_.reset();
+  rawIdArr_.reset();
+  adc_.reset();
+  clus_.reset();
 }
 /*
 int8_t* CountValidatorSimple::getOutput() {
