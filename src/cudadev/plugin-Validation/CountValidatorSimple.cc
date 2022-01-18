@@ -116,22 +116,32 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
       std::memcpy(output_.get() + pCount,rawIdArr_.get(),nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
       std::memcpy(output_.get() + pCount,adc_.get()     ,nDigis_*sizeof(uint16_t)); pCount+=2*nDigis_;
       std::memcpy(output_.get() + pCount,clus_.get()    ,nDigis_*sizeof(int32_t));  pCount+=4*nDigis_;
-      std::cout << "---> server" << nDigis_ << " -- " << pdigi_[0] << " -- " << rawIdArr_[0] << " -- " << adc_[0] << " -- " << clus_[0] << std::endl;
+      //std::cout << "---> server" << nDigis_ << " -- " << pdigi_[0] << " -- " << rawIdArr_[0] << " -- " << adc_[0] << " -- " << clus_[0] << std::endl;
     } else { 
       uint32_t pOldDigi = 0;
       uint32_t pOldRawId = 0;
       uint16_t pADC      = 0;
       int32_t  pOldClus = 0;
 
-      uint32_t pdigi   [100000];
-      uint32_t rawIdArr[100000];
-      uint16_t adc     [100000];
-      int32_t  clus    [100000];
+      //uint32_t pdigi   [100000];
+      //uint32_t rawIdArr[100000];
+      //uint16_t adc     [100000];
+      //int32_t  clus    [100000];
+      uint32_t* pdigi = new uint32_t[100000];
+      uint32_t* rawIdArr = new uint32_t[100000];
+      uint16_t* adc = new uint16_t[100000];
+      int32_t* clus = new int32_t[100000];
 
-      uint32_t pdigiArrs[150000];
-      uint32_t rawIdArrs[150000];
-      uint16_t adcArrs  [150000];
-      int32_t  clusArrs [150000];
+      uint32_t* pdigiArrs = new uint32_t[150000];
+      uint32_t* rawIdArrs = new uint32_t[150000];
+      uint16_t* adcArrs   = new uint16_t[150000];
+      int32_t*  clusArrs  = new int32_t [150000];
+
+      //uint32_t pdigiArrs[150000];
+      //uint32_t rawIdArrs[150000];
+      //uint16_t adcArrs  [150000];
+      //int32_t  clusArrs [150000];
+
       std::memcpy(pdigiArrs,pdigi_.get()   ,nDigis_*sizeof(uint32_t)); 
       std::memcpy(rawIdArrs,rawIdArr_.get(),nDigis_*sizeof(uint32_t)); 
       std::memcpy(adcArrs,  adc_.get()     ,nDigis_*sizeof(uint16_t)); 
@@ -162,6 +172,16 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
       std::memcpy(output_.get() + pCount,rawIdArr,nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
       std::memcpy(output_.get() + pCount,adc     ,nDigis_*sizeof(uint16_t)); pCount+=2*nDigis_;
       std::memcpy(output_.get() + pCount,clus    ,nDigis_*sizeof(int32_t));  pCount+=4*nDigis_;
+
+      delete [] pdigi;
+      delete [] rawIdArr;
+      delete [] adc;
+      delete [] clus;
+      
+      delete [] pdigiArrs;
+      delete [] rawIdArrs;
+      delete [] adcArrs;
+      delete [] clusArrs;
       //std::cout << "---> server" << nDigis_ << " -- " << pdigi[0] << " -- " << rawIdArr[0] << " -- " << adc[0] << " -- " << clus[0] << std::endl;
     }
 
