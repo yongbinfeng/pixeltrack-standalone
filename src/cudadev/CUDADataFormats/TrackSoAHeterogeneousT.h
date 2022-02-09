@@ -4,10 +4,17 @@
 #include "CUDACore/HistoContainer.h"
 #include "CUDADataFormats/HeterogeneousSoA.h"
 #include "CUDADataFormats/TrajectoryStateSoAT.h"
+#include "Geometry/phase1PixelTopology.h"
 
 namespace pixelTrack {
-  enum class Quality : uint8_t { bad = 0, edup, dup, loose, strict, tight, highPurity };
-}
+  enum class Quality : uint8_t { bad = 0, edup, dup, loose, strict, tight, highPurity, notQuality };
+  constexpr uint32_t qualitySize{uint8_t(Quality::notQuality)};
+  const std::string qualityName[qualitySize]{"bad", "edup", "dup", "loose", "strict", "tight", "highPurity"};
+  inline Quality qualityByName(std::string const &name) {
+    auto qp = std::find(qualityName, qualityName + qualitySize, name) - qualityName;
+    return static_cast<Quality>(qp);
+  }
+}  // namespace pixelTrack
 
 template <int32_t S>
 class TrackSoAHeterogeneousT {
@@ -32,7 +39,26 @@ public:
   // this is chi2/ndof as not necessarely all hits are used in the fit
   eigenSoA::ScalarSoA<float, S> chi2;
 
+  eigenSoA::ScalarSoA<int8_t, S> nLayers;
+
   constexpr int nHits(int i) const { return detIndices.size(i); }
+
+  constexpr bool isTriplet(int i) const { return nLayers(i) == 3; }
+
+  constexpr int computeNumberOfLayers(int32_t i) const {
+    // layers are in order and we assume tracks are either forward or backward
+    auto pdet = detIndices.begin(i);
+    int nl = 1;
+    auto ol = phase1PixelTopology::getLayer(*pdet);
+    for (; pdet < detIndices.end(i); ++pdet) { 
+      //int idet = 0; idet < detIndices.size(i); idet++) { 
+      //pdet < detIndices.end(i); ++pdet) {
+      int il = phase1PixelTopology::getLayer(*pdet);
+      if (il != ol) ++nl;
+      ol = il;
+    }
+    return nl;
+  }
 
   // State at the Beam spot
   // phi,tip,1/pt,cotan(theta),zip

@@ -15,11 +15,14 @@ namespace gpuClustering {
   __device__ uint32_t gMaxHit = 0;
 #endif
 
+  template <bool isPhase2>
   __global__ void countModules(uint16_t const* __restrict__ id,
                                uint32_t* __restrict__ moduleStart,
                                int32_t* __restrict__ clusterId,
                                int numElements) {
     int first = blockDim.x * blockIdx.x + threadIdx.x;
+    constexpr int nMaxModules = isPhase2 ? phase2PixelTopology::numberOfModules : phase1PixelTopology::numberOfModules;
+    assert(nMaxModules < maxNumModules);
     for (int i = first; i < numElements; i += gridDim.x * blockDim.x) {
       clusterId[i] = i;
       if (invalidModuleId == id[i])
@@ -29,12 +32,13 @@ namespace gpuClustering {
         --j;
       if (j < 0 or id[j] != id[i]) {
         // boundary...
-        auto loc = atomicInc(moduleStart, maxNumModules);
+        auto loc = atomicInc(moduleStart, nMaxModules);
         moduleStart[loc + 1] = i;
       }
     }
   }
 
+  template <bool isPhase2>
   __global__ void findClus(uint16_t const* __restrict__ id,           // module id of each pixel
                            uint16_t const* __restrict__ x,            // local coordinates of each pixel
                            uint16_t const* __restrict__ y,            //
@@ -47,10 +51,14 @@ namespace gpuClustering {
 
     auto firstModule = blockIdx.x;
     auto endModule = moduleStart[0];
+
+    //constexpr int nMaxModules = isPhase2 ? phase2PixelTopology::numberOfModules : phase1PixelTopology::numberOfModules;
+    //assert(nMaxModules < maxNumModules);
+
     for (auto module = firstModule; module < endModule; module += gridDim.x) {
       auto firstPixel = moduleStart[1 + module];
       auto thisModuleId = id[firstPixel];
-      assert(thisModuleId < maxNumModules);
+      //assert(thisModuleId < nMaxModules);
 
 #ifdef GPU_DEBUG
       if (thisModuleId % 100 == 1)
@@ -75,9 +83,11 @@ namespace gpuClustering {
       }
 
       //init hist  (ymax=416 < 512 : 9bits)
-      constexpr uint32_t maxPixInModule = 4000;
-      constexpr auto nbins = phase1PixelTopology::numColsInModule + 2;  //2+2;
-      using Hist = cms::cuda::HistoContainer<uint16_t, nbins, maxPixInModule, 9, uint16_t>;
+      //6000 max pixels required for HI operations with no measurable impact on pp performance
+      constexpr uint32_t maxPixInModule = 6000;
+      constexpr auto nbins = isPhase2 ? 1024 : phase1PixelTopology::numColsInModule + 2;  //2+2;
+      constexpr auto nbits = isPhase2 ? 10 : 9;                                           //2+2;
+      using Hist = cms::cuda::HistoContainer<uint16_t, nbins, maxPixInModule, nbits, uint16_t>;
       __shared__ Hist hist;
       __shared__ typename Hist::Counter ws[32];
       for (auto j = threadIdx.x; j < Hist::totbins(); j += blockDim.x) {
@@ -134,6 +144,11 @@ namespace gpuClustering {
 #ifdef __CUDA_ARCH__
       // assume that we can cover the whole module with up to 16 blockDim.x-wide iterations
       constexpr int maxiter = 16;
+      if (threadIdx.x == 0 && (hist.size() / blockDim.x) >= maxiter)
+        printf("THIS IS NOT SUPPOSED TO HAPPEN too many hits in module %d: %d for block size %d\n",
+               thisModuleId,
+               hist.size(),
+               blockDim.x);
 #else
       auto maxiter = hist.size();
 #endif
@@ -218,21 +233,21 @@ namespace gpuClustering {
               auto l = nn[k][kk];
               auto m = l + firstPixel;
               assert(m != i);
-	      #if !defined __CUDA_ARCH__ || __CUDA_ARCH__ >= 600
-                auto old = atomicMin_block(&clusterId[m], clusterId[i]); //FIX BLOCK
-	      #else
-		auto old = atomicMin(&clusterId[m], clusterId[i]);
-	      #endif
+#if !defined __CUDA_ARCH__ || __CUDA_ARCH__ >= 600
+              auto old = atomicMin_block(&clusterId[m], clusterId[i]);
+#else
+              auto old = atomicMin(&clusterId[m], clusterId[i]);
+#endif
               // do we need memory fence?
               if (old != clusterId[i]) {
                 // end the loop only if no changes were applied
                 more = true;
               }
-	      #if !defined __CUDA_ARCH__ || __CUDA_ARCH__ >= 600
-                atomicMin_block(&clusterId[i], old); //FIX BLOC
-	      #else
-		atomicMin(&clusterId[i], old);
-	      #endif
+#if !defined __CUDA_ARCH__ || __CUDA_ARCH__ >= 600
+              atomicMin_block(&clusterId[i], old);
+#else
+              atomicMin(&clusterId[i], old);
+#endif
             }  // nnloop
           }    // pixel loop
         }

@@ -16,7 +16,7 @@
 
 SiPixelROCsStatusAndMappingWrapper::SiPixelROCsStatusAndMappingWrapper(SiPixelROCsStatusAndMapping const& cablingMap,
                                                                std::vector<unsigned char> modToUnp)
-    : modToUnpDefault(modToUnp.size()), hasQuality_(false) {
+    : modToUnpDefault(modToUnp.size()), hasQuality_(true) {
   cudaCheck(cudaMallocHost(&cablingMapHost, sizeof(SiPixelROCsStatusAndMapping)));
   std::memcpy(cablingMapHost, &cablingMap, sizeof(SiPixelROCsStatusAndMapping));
 

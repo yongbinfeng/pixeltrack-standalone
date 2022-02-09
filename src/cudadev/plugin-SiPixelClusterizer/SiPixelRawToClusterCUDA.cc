@@ -51,6 +51,8 @@ private:
   const bool isRun2_;
   const bool includeErrors_;
   const bool useQuality_;
+  const uint32_t maxFedWords_;
+  uint32_t nDigis_;
   const SiPixelClusterThresholds clusterThresholds_;
 };
 
@@ -60,14 +62,14 @@ SiPixelRawToClusterCUDA::SiPixelRawToClusterCUDA(edm::ProductRegistry& reg)
       clusterPutToken_(reg.produces<cms::cuda::Product<SiPixelClustersCUDA>>()),
       isRun2_(true),
       includeErrors_(true),
-      useQuality_(false),
+      useQuality_(true),
+      maxFedWords_(150*2000),
       clusterThresholds_{kSiPixelClusterThresholdsDefaultPhase1.layer1,
                          kSiPixelClusterThresholdsDefaultPhase1.otherLayers} {
   if (includeErrors_) {
     digiErrorPutToken_ = reg.produces<cms::cuda::Product<SiPixelDigiErrorsCUDA>>();
   }
-
-  wordFedAppender_ = std::make_unique<pixelgpudetails::SiPixelRawToClusterGPUKernel::WordFedAppender>();
+  wordFedAppender_ = std::make_unique<pixelgpudetails::SiPixelRawToClusterGPUKernel::WordFedAppender>(maxFedWords_);
 }
 
 void SiPixelRawToClusterCUDA::acquire(const edm::Event& iEvent,
@@ -155,6 +157,11 @@ void SiPixelRawToClusterCUDA::acquire(const edm::Event& iEvent,
 
   }  // end of for loop
 
+  nDigis_ = wordCounterGPU;
+
+  if (nDigis_ == 0)
+    return;
+
   gpuAlgo_.makeClustersAsync(isRun2_,
                              clusterThresholds_,
                              gpuMap,
@@ -164,6 +171,7 @@ void SiPixelRawToClusterCUDA::acquire(const edm::Event& iEvent,
                              std::move(errors_),
                              wordCounterGPU,
                              fedCounter,
+			     maxFedWords_,
                              useQuality_,
                              includeErrors_,
                              false,  // debug
@@ -172,6 +180,17 @@ void SiPixelRawToClusterCUDA::acquire(const edm::Event& iEvent,
 
 void SiPixelRawToClusterCUDA::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   cms::cuda::ScopedContextProduce ctx{ctxState_};
+
+  if (nDigis_ == 0) {
+    // default construct collections and place them in event
+    auto tmp = std::make_pair(SiPixelDigisCUDA{}, SiPixelClustersCUDA{});
+    ctx.emplace(iEvent, digiPutToken_, std::move(tmp.first));
+    ctx.emplace(iEvent, clusterPutToken_, std::move(tmp.second));
+    if (includeErrors_) {
+      ctx.emplace(iEvent, digiErrorPutToken_, SiPixelDigiErrorsCUDA{});
+    }
+    return;
+  }
 
   auto tmp = gpuAlgo_.getResults();
   ctx.emplace(iEvent, digiPutToken_, std::move(tmp.first));

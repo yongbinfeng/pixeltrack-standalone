@@ -1,7 +1,9 @@
 #ifndef DataFormats_SiPixelDigi_interface_SiPixelErrorsSoA_h
 #define DataFormats_SiPixelDigi_interface_SiPixelErrorsSoA_h
 
-#include "DataFormats/PixelErrors.h"
+#include "DataFormats/SiPixelErrorCompact.h"
+#include "DataFormats/SiPixelFormatterErrors.h"
+
 
 #include <cstdint>
 #include <vector>
@@ -9,22 +11,21 @@
 class SiPixelErrorsSoA {
 public:
   SiPixelErrorsSoA() = default;
-  explicit SiPixelErrorsSoA(size_t nErrors, const PixelErrorCompact *error)//, const PixelFormatterErrors *err)
-    : error_(error, error + nErrors) {}
-	//, formatterErrors_(err) {}
+  explicit SiPixelErrorsSoA(size_t nErrors, const SiPixelErrorCompact *error, const SiPixelFormatterErrors *err)
+    : error_(error, error + nErrors), formatterErrors_(err) {}
   ~SiPixelErrorsSoA() = default;
 
   auto size() const { return error_.size(); }
 
-  //const PixelFormatterErrors *formatterErrors() const { return formatterErrors_; }
+  const SiPixelFormatterErrors *formatterErrors() const { return formatterErrors_; }
 
-  const PixelErrorCompact &error(size_t i) const { return error_[i]; }
+  const SiPixelErrorCompact &error(size_t i) const { return error_[i]; }
 
-  const std::vector<PixelErrorCompact> &errorVector() const { return error_; }
+  const std::vector<SiPixelErrorCompact> &errorVector() const { return error_; }
 
 private:
-  std::vector<PixelErrorCompact> error_;
-  //const PixelFormatterErrors *formatterErrors_ = nullptr;
+  std::vector<SiPixelErrorCompact> error_;
+  const SiPixelFormatterErrors *formatterErrors_ = nullptr;
 };
 
 #endif

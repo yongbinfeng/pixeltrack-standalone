@@ -24,10 +24,10 @@ private:
   edm::EDGetTokenT<cms::cuda::Product<SiPixelDigiErrorsCUDA>> digiErrorGetToken_;
   edm::EDPutTokenT<SiPixelErrorsSoA> digiErrorPutToken_;
 
-  cms::cuda::host::unique_ptr<PixelErrorCompact[]> data_;
-  cms::cuda::SimpleVector<PixelErrorCompact> error_;
+  cms::cuda::host::unique_ptr<SiPixelErrorCompact[]> data_;
+  cms::cuda::SimpleVector<SiPixelErrorCompact> error_;
   size_t nErrors_;
-  //const PixelFormatterErrors* formatterErrors_ = nullptr;
+  const SiPixelFormatterErrors* formatterErrors_ = nullptr;
 };
 
 SiPixelDigiErrorsSoAFromCUDA::SiPixelDigiErrorsSoAFromCUDA(edm::ProductRegistry& reg)
@@ -40,11 +40,14 @@ void SiPixelDigiErrorsSoAFromCUDA::acquire(edm::Event const& iEvent,
   // Do the transfer in a CUDA stream parallel to the computation CUDA stream
   cms::cuda::ScopedContextAcquire ctx{iEvent.streamID(), std::move(waitingTaskHolder)};
   const auto& gpuDigiErrors = ctx.get(iEvent, digiErrorGetToken_);
+  formatterErrors_ = &(gpuDigiErrors.formatterErrors());
+
+  if (gpuDigiErrors.nErrorWords() == 0)
+    return;
+
   auto tmp = gpuDigiErrors.dataErrorToHostAsync(ctx.stream());
   error_ = tmp.first;
   data_ = std::move(tmp.second);
-  nErrors_ = error_.size();
-  //formatterErrors_ = &(gpuDigiErrors.formatterErrors());
 }
 
 void SiPixelDigiErrorsSoAFromCUDA::produce(edm::Event& iEvent, edm::EventSetup const& iSetup) {
@@ -58,10 +61,10 @@ void SiPixelDigiErrorsSoAFromCUDA::produce(edm::Event& iEvent, edm::EventSetup c
   //     host memory to be allocated without a CUDA stream
   // - What if a CPU algorithm would produce the same SoA? We can't
   //   use cudaMallocHost without a GPU...
-  iEvent.emplace(digiErrorPutToken_, nErrors_, error_.data());//, formatterErrors_);
-
-  error_ = cms::cuda::make_SimpleVector<PixelErrorCompact>(0, nullptr);
+  //iEvent.emplace(digiErrorPutToken_, nErrors_, error_.data());//, formatterErrors_);
+  iEvent.emplace(digiErrorPutToken_, size_t(error_.size()), error_.data(), formatterErrors_);
+  error_ = cms::cuda::make_SimpleVector<SiPixelErrorCompact>(0, nullptr);
   data_.reset();
-  //formatterErrors_ = nullptr;
+  formatterErrors_ = nullptr;
 }
 DEFINE_FWK_MODULE(SiPixelDigiErrorsSoAFromCUDA);

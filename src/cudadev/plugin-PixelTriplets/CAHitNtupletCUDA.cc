@@ -37,7 +37,6 @@ void CAHitNtupletCUDA::produce(edm::Event& iEvent, const edm::EventSetup& es) {
   auto const& phits = iEvent.get(tokenHitGPU_);
   cms::cuda::ScopedContextProduce ctx{phits};
   auto const& hits = ctx.get(phits);
-
   ctx.emplace(iEvent, tokenTrackGPU_, gpuAlgo_.makeTuplesAsync(hits, bf, ctx.stream()));
 }
 

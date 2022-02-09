@@ -30,6 +30,8 @@ PixelCPEFast::PixelCPEFast(std::string const &path) {
     in.read(reinterpret_cast<char *>(detParamsGPU_.data()), ndetParams * sizeof(pixelCPEforGPU::DetParams));
     in.read(reinterpret_cast<char *>(&averageGeometry_), sizeof(pixelCPEforGPU::AverageGeometry));
     in.read(reinterpret_cast<char *>(&layerGeometry_), sizeof(pixelCPEforGPU::LayerGeometry));
+    std::cout << "layer Geom ---> " << this->layerGeometry_.maxModuleStride << " -- " << this->layerGeometry_.layer[0] << std::endl;
+    std::cout << "---> " << sizeof(pixelCPEforGPU::LayerGeometry) << " -- " << sizeof(this->layerGeometry_.layer) << " -- " << sizeof(this->layerGeometry_.layerStart) << std::endl;
   }
 
   cpuData_ = {
@@ -49,7 +51,6 @@ const pixelCPEforGPU::ParamsOnGPU *PixelCPEFast::getGPUProductAsync(cudaStream_t
     cudaCheck(cudaMalloc((void **)&data.paramsOnGPU_h.m_averageGeometry, sizeof(pixelCPEforGPU::AverageGeometry)));
     cudaCheck(cudaMalloc((void **)&data.paramsOnGPU_h.m_layerGeometry, sizeof(pixelCPEforGPU::LayerGeometry)));
     cudaCheck(cudaMalloc((void **)&data.paramsOnGPU_d, sizeof(pixelCPEforGPU::ParamsOnGPU)));
-
     cudaCheck(cudaMemcpyAsync(
         data.paramsOnGPU_d, &data.paramsOnGPU_h, sizeof(pixelCPEforGPU::ParamsOnGPU), cudaMemcpyDefault, stream));
     cudaCheck(cudaMemcpyAsync((void *)data.paramsOnGPU_h.m_commonParams,

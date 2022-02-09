@@ -5,8 +5,10 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <string>
-#include <string_view>
+
+// Boost headers
+#define BOOST_STACKTRACE_USE_BACKTRACE
+#include <boost/stacktrace.hpp>
 
 // CUDA headers
 #include <cuda.h>
@@ -20,22 +22,24 @@ namespace cms {
                                               const char* cmd,
                                               const char* error,
                                               const char* message,
-                                              std::string_view description = std::string_view()) {
+                                              const char* description = nullptr) {
       std::ostringstream out;
       out << "\n";
       out << file << ", line " << line << ":\n";
       out << "cudaCheck(" << cmd << ");\n";
       out << error << ": " << message << "\n";
-      if (!description.empty())
+      if (description)
         out << description << "\n";
+
+      out << "\nCurrent stack trace:\n";
+      out << boost::stacktrace::stacktrace();
+      out << "\n";
+
       throw std::runtime_error(out.str());
     }
 
-    inline bool cudaCheck_(const char* file,
-                           int line,
-                           const char* cmd,
-                           CUresult result,
-                           std::string_view description = std::string_view()) {
+    inline bool cudaCheck_(
+        const char* file, int line, const char* cmd, CUresult result, const char* description = nullptr) {
       if (result == CUDA_SUCCESS)
         return true;
 
@@ -47,11 +51,8 @@ namespace cms {
       return false;
     }
 
-    inline bool cudaCheck_(const char* file,
-                           int line,
-                           const char* cmd,
-                           cudaError_t result,
-                           std::string_view description = std::string_view()) {
+    inline bool cudaCheck_(
+        const char* file, int line, const char* cmd, cudaError_t result, const char* description = nullptr) {
       if (result == cudaSuccess)
         return true;
 
@@ -60,6 +61,7 @@ namespace cms {
       abortOnCudaError(file, line, cmd, error, message, description);
       return false;
     }
+
   }  // namespace cuda
 }  // namespace cms
 

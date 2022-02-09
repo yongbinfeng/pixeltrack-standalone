@@ -1,7 +1,6 @@
 #ifndef ProductRegistry_h
 #define ProductRegistry_h
 
-#include <iostream>
 #include <memory>
 #include <set>
 #include <stdexcept>
@@ -24,8 +23,7 @@ namespace edm {
     EDPutTokenT<T> produces() {
       const std::type_index ti{typeid(T)};
       const unsigned int ind = typeToIndex_.size();
-      Indices pIndice(currentModuleIndex_,ind);
-      auto succeeded = typeToIndex_.emplace(ti, pIndice);//currentModuleIndex_, ind);
+      auto succeeded = typeToIndex_.try_emplace(ti, currentModuleIndex_, ind);
       if (not succeeded.second) {
         throw std::runtime_error(std::string("Product of type ") + typeid(T).name() + " already exists");
       }

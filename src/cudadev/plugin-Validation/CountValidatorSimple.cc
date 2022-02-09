@@ -50,10 +50,7 @@ private:
   bool suppressDigis_;
   bool suppressTracks_;
 
-  cms::cuda::host::unique_ptr<uint32_t[]> pdigi_;
-  cms::cuda::host::unique_ptr<uint32_t[]> rawIdArr_;
-  cms::cuda::host::unique_ptr<uint16_t[]> adc_;
-  cms::cuda::host::unique_ptr<int32_t[]>  clus_;
+  cms::cuda::host::unique_ptr<uint16_t[]> store_;
   uint32_t nDigis_;
 };
 
@@ -75,12 +72,9 @@ void CountValidatorSimple::acquire(const edm::Event& iEvent,
 				   const edm::EventSetup& iSetup,
 				   edm::WaitingTaskWithArenaHolder waitingTaskHolder) {
   cms::cuda::ScopedContextAcquire ctx{iEvent.streamID(), std::move(waitingTaskHolder)};
-  const auto& digis = ctx.get(iEvent, digiToken_);
-  pdigi_     = digis.pdigiToHostAsync(ctx.stream());
-  rawIdArr_  = digis.rawIdArrToHostAsync(ctx.stream());
-  adc_       = digis.adcToHostAsync(ctx.stream());
-  clus_      = digis.clusToHostAsync(ctx.stream());
-  nDigis_    = digis.nDigis();
+  const auto& gpuDigis = ctx.get(iEvent, digiToken_);  
+  nDigis_ = gpuDigis.nDigis();
+  store_  = gpuDigis.copyAllToHostAsync(ctx.stream());
 }
 
 void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
@@ -110,13 +104,13 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     //rawIdArr_  = digis.rawIdArrToHostAsync(ctx.stream());
     //adc_       = digis.adcToHostAsync(ctx.stream());
     //clus_      = digis.clusToHostAsync(ctx.stream());
-    if(!suppressDigis_) { 
+    if(!suppressDigis_) {
+      auto tmp_view = SiPixelDigisCUDASOAView(store_, nDigis_, SiPixelDigisCUDASOAView::StorageLocationHost::kMAX);
       std::memcpy(output_.get() + pCount,&nDigis_,sizeof(uint32_t)); pCount += 4;
-      std::memcpy(output_.get() + pCount,pdigi_.get()   ,nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
-      std::memcpy(output_.get() + pCount,rawIdArr_.get(),nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
-      std::memcpy(output_.get() + pCount,adc_.get()     ,nDigis_*sizeof(uint16_t)); pCount+=2*nDigis_;
-      std::memcpy(output_.get() + pCount,clus_.get()    ,nDigis_*sizeof(int32_t));  pCount+=4*nDigis_;
-      std::cout << "---> server" << nDigis_ << " -- " << pdigi_[0] << " -- " << rawIdArr_[0] << " -- " << adc_[0] << " -- " << clus_[0] << std::endl;
+      std::memcpy(output_.get() + pCount,tmp_view.pdigi()   ,nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
+      std::memcpy(output_.get() + pCount,tmp_view.rawIdArr(),nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
+      std::memcpy(output_.get() + pCount,tmp_view.adc()     ,nDigis_*sizeof(uint16_t)); pCount+=2*nDigis_;
+      std::memcpy(output_.get() + pCount,tmp_view.clus()    ,nDigis_*sizeof(int32_t));  pCount+=4*nDigis_;
     } else { 
       uint32_t pOldDigi = 0;
       uint32_t pOldRawId = 0;
@@ -132,10 +126,11 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
       uint32_t rawIdArrs[150000];
       uint16_t adcArrs  [150000];
       int32_t  clusArrs [150000];
-      std::memcpy(pdigiArrs,pdigi_.get()   ,nDigis_*sizeof(uint32_t)); 
-      std::memcpy(rawIdArrs,rawIdArr_.get(),nDigis_*sizeof(uint32_t)); 
-      std::memcpy(adcArrs,  adc_.get()     ,nDigis_*sizeof(uint16_t)); 
-      std::memcpy(clusArrs, clus_.get()    ,nDigis_*sizeof(int32_t)); 
+      auto tmp_view = SiPixelDigisCUDASOAView(store_, nDigis_, SiPixelDigisCUDASOAView::StorageLocationHost::kMAX);
+      std::memcpy(pdigiArrs,tmp_view.pdigi()    ,nDigis_*sizeof(uint32_t)); 
+      std::memcpy(rawIdArrs,tmp_view.rawIdArr(),nDigis_*sizeof(uint32_t)); 
+      std::memcpy(adcArrs,  tmp_view.adc()     ,nDigis_*sizeof(uint16_t)); 
+      std::memcpy(clusArrs, tmp_view.clus()    ,nDigis_*sizeof(int32_t)); 
       uint32_t pDigiCount=0;
       for(uint32_t i0 = 0; i0 < nDigis_+1; i0++) { 
 	if(pOldRawId != rawIdArrs[i0] || pOldClus != clusArrs[i0] ) { // || pOldDigi != pdigi_[i0]) {   
@@ -153,7 +148,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
 	    pOldClus  = clusArrs[i0];
 	  }
 	} else { 
-	  if(adcArrs[i0] + pADC < 65536) pADC += adc_.get()[i0];
+	  if(adcArrs[i0] + pADC < 65536) pADC += tmp_view.adc()[i0];
 	}
       }
       nDigis_ = pDigiCount;
@@ -162,7 +157,6 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
       std::memcpy(output_.get() + pCount,rawIdArr,nDigis_*sizeof(uint32_t)); pCount+=4*nDigis_;
       std::memcpy(output_.get() + pCount,adc     ,nDigis_*sizeof(uint16_t)); pCount+=2*nDigis_;
       std::memcpy(output_.get() + pCount,clus    ,nDigis_*sizeof(int32_t));  pCount+=4*nDigis_;
-      //std::cout << "---> server" << nDigis_ << " -- " << pdigi[0] << " -- " << rawIdArr[0] << " -- " << adc[0] << " -- " << clus[0] << std::endl;
     }
 
     auto const& pdigiErrors = iEvent.get(digiErrorToken_);
@@ -277,11 +271,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
   iEvent.emplace(outputToken_, std::move(output_));
   size_.get()[0] = pCount;
   iEvent.emplace(sizeToken_, std::move(size_));
-
-  pdigi_.reset();
-  rawIdArr_.reset();
-  adc_.reset();
-  clus_.reset();
+  store_.reset();
 }
 /*
 int8_t* CountValidatorSimple::getOutput() {

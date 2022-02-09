@@ -36,7 +36,7 @@ namespace gpuVertexFinder {
 
       if (nHits < 4)
         continue;  // no triplets
-      if (quality[idx] < pixelTrack::Quality::highPurity)
+      if (quality[idx] != pixelTrack::Quality::loose)
         continue;
 
       auto pt = tracks.pt(idx);
@@ -128,7 +128,7 @@ namespace gpuVertexFinder {
 
 #ifdef __CUDACC__
     // Running too many thread lead to problems when printf is enabled.
-    constexpr int maxThreadsForPrint = 1024 - 128;
+    constexpr int maxThreadsForPrint = 1024 - 256;
     constexpr int numBlocks = 1024;
     constexpr int threadsPerBlock = 128;
 
