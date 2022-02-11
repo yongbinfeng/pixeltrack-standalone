@@ -1,6 +1,6 @@
 #include "CAHitNtupletGeneratorKernelsImpl.h"
 
-#define NTUPLE_DEBUG
+//#define NTUPLE_DEBUG
 //#define GPU_DEBUG
 
 
@@ -124,7 +124,7 @@ void CAHitNtupletGeneratorKernelsGPU::launchKernels(HitsOnCPU const &hh, TkSoA *
   cms::cuda::finalizeBulk<<<numberOfBlocks, blockSize, 0, cudaStream>>>(device_hitTuple_apc_, tuples_d);
 
 #ifdef NTUPLE_DEBUG
-  std::cout << "---> Kenel connect 9" << std::endl;
+  std::cout << "---> Kenel connect 9"   << std::endl;
   cudaDeviceSynchronize();
 #endif
 
@@ -132,7 +132,8 @@ void CAHitNtupletGeneratorKernelsGPU::launchKernels(HitsOnCPU const &hh, TkSoA *
   cudaCheck(cudaGetLastError());
 
 #ifdef NTUPLE_DEBUG
-  std::cout << "---> Kenel connect 9.05" << " -- " << phase1PixelTopology::layer[0] << std::endl;
+  int test = phase1PixelTopology::maxModuleStride;
+  std::cout << "---> Kenel connect 9.05" << " -- " << test << std::endl;
   cudaDeviceSynchronize();
 #endif 
 

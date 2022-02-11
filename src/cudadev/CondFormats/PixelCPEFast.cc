@@ -32,6 +32,13 @@ PixelCPEFast::PixelCPEFast(std::string const &path) {
     in.read(reinterpret_cast<char *>(&layerGeometry_), sizeof(pixelCPEforGPU::LayerGeometry));
     std::cout << "layer Geom ---> " << this->layerGeometry_.maxModuleStride << " -- " << this->layerGeometry_.layer[0] << std::endl;
     std::cout << "---> " << sizeof(pixelCPEforGPU::LayerGeometry) << " -- " << sizeof(this->layerGeometry_.layer) << " -- " << sizeof(this->layerGeometry_.layerStart) << std::endl;
+    std::cout << "--checking layer 1 " << std::endl;
+    /*
+    for(unsigned i0 = 0; i0 < 1500; ++i0) { 
+      std::cout << i0 << " -checking--> " << int(this->layerGeometry_.layer[i0]) << " -- " << int(phase1PixelTopology::getLayer(i0)) << std::endl;
+    }
+    */
+    std::cout << "--checking layer 2 " << std::endl;
   }
 
   cpuData_ = {

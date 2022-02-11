@@ -57,7 +57,7 @@ private:
 CountValidatorSimple::CountValidatorSimple(edm::ProductRegistry& reg)
   : hitsToken_(reg.consumes<HMSstorage>()),
     digiToken_(reg.consumes<cms::cuda::Product<SiPixelDigisCUDA>>()),
-    digiErrorToken_(reg.consumes<SiPixelErrorsSoA>()),
+    //digiErrorToken_(reg.consumes<SiPixelErrorsSoA>()),
     clusterToken_(reg.consumes<cms::cuda::Product<SiPixelClustersCUDA>>()),
     trackToken_(reg.consumes<PixelTrackHeterogeneous>()),
     vertexToken_(reg.consumes<ZVertexHeterogeneous>()),
@@ -82,7 +82,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
   auto size_   = std::make_unique<uint64_t[]>(1);
   unsigned int pCount = 0;
   {
-    uint32_t  nErrors_;
+    //uint32_t  nErrors_;
     uint32_t  nHits_;
     
     auto const& hits = iEvent.get(hitsToken_);
@@ -158,12 +158,13 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
       std::memcpy(output_.get() + pCount,adc     ,nDigis_*sizeof(uint16_t)); pCount+=2*nDigis_;
       std::memcpy(output_.get() + pCount,clus    ,nDigis_*sizeof(int32_t));  pCount+=4*nDigis_;
     }
-
+    /*
     auto const& pdigiErrors = iEvent.get(digiErrorToken_);
     nErrors_ = pdigiErrors.size();
     if(nErrors_ > 0) std::cout << " ---> Found an Error " << std::endl;
     std::memcpy(output_.get()+pCount,&nErrors_,sizeof(uint32_t)); pCount += 4;
     std::memcpy(output_.get()+pCount,pdigiErrors.errorVector().data(),10*nErrors_);     pCount += 10*nErrors_;
+    */
   }
   if( suppressTracks_ ) {
     auto const& tracks = iEvent.get(trackToken_);
@@ -172,6 +173,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     
     unsigned int pSize = 2000;
     float   chi2   [pSize];
+    int8_t  nLayers[pSize];
     uint8_t quality[pSize];
     float   eta    [pSize];
     float   pt     [pSize];
@@ -188,6 +190,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     for(unsigned  i0 = 0; i0 < nTracks; i0++) {
       if(tracks->quality(i0) > pixelTrack::Quality::dup && tracks->nHits(i0) > 0 && pInt < pSize-1) {
 	chi2[pInt]    = tracks->chi2(i0);
+	nLayers[pInt] = tracks->nLayers(i0);
 	quality[pInt] = uint8_t(tracks->quality(i0));
 	eta[pInt]     = tracks->eta(i0);
 	pt[pInt]      = tracks->pt(i0);
@@ -214,6 +217,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
     nTracks = pInt;
     std::memcpy(output_.get() + pCount,&nTracks,sizeof(uint32_t)); pCount += 4;
     std::memcpy(output_.get() + pCount,chi2,        nTracks*sizeof(float));             pCount+=4*nTracks;
+    std::memcpy(output_.get() + pCount,nLayers,     nTracks*sizeof(int8_t));            pCount+=nTracks;
     std::memcpy(output_.get() + pCount,quality,     nTracks*sizeof(uint8_t));           pCount+=nTracks;
     std::memcpy(output_.get() + pCount,eta,         nTracks*sizeof(float));             pCount+=4*nTracks;
     std::memcpy(output_.get() + pCount,pt,          nTracks*sizeof(float));             pCount+=4*nTracks;

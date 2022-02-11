@@ -115,38 +115,28 @@ CAHitNtupletGeneratorOnGPU::~CAHitNtupletGeneratorOnGPU() {
 PixelTrackHeterogeneous CAHitNtupletGeneratorOnGPU::makeTuplesAsync(TrackingRecHit2DGPU const& hits_d,
                                                                     float bfield,
                                                                     cudaStream_t stream) const {
-  std::cout << " A " << std::endl;
   PixelTrackHeterogeneous tracks(cms::cuda::make_device_unique<pixelTrack::TrackSoA>(stream));
   cudaDeviceSynchronize();
-  std::cout << " B " << std::endl;
   auto* soa = tracks.get();
   assert(soa);
   cudaDeviceSynchronize();
-  std::cout << " C " << std::endl;
   CAHitNtupletGeneratorKernelsGPU kernels(m_params);
   kernels.setCounters(m_counters);
   kernels.allocateOnGPU(hits_d.nHits(), stream);
   cudaDeviceSynchronize();
-  std::cout << " D " << std::endl;
   kernels.buildDoublets(hits_d, stream);
-  std::cout << " D 1 " << std::endl;
   kernels.launchKernels(hits_d, soa, stream);
   cudaDeviceSynchronize();
-  std::cout << " E " << std::endl;
   HelixFitOnGPU fitter(bfield, m_params.fitNas4_);
   fitter.allocateOnGPU(&(soa->hitIndices), kernels.tupleMultiplicity(), soa);
-  std::cout << " F " << std::endl;
   cudaDeviceSynchronize();
-  std::cout << " F 1 " << std::endl;
   if (m_params.useRiemannFit_) {
     fitter.launchRiemannKernels(hits_d.view(), hits_d.nHits(), caConstants::maxNumberOfQuadruplets, stream);
   } else {
     fitter.launchBrokenLineKernels(hits_d.view(), hits_d.nHits(), caConstants::maxNumberOfQuadruplets, stream);
   }
-  std::cout << " F 2 " << std::endl;
   cudaDeviceSynchronize();
   kernels.classifyTuples(hits_d, soa, stream);
-  std::cout << " G " << std::endl;
 #ifdef GPU_DEBUG
   cudaDeviceSynchronize();
   cudaCheck(cudaGetLastError());

@@ -2,8 +2,8 @@
 // Original Author: Felice Pantaleo, CERN
 //
 
-// #define NTUPLE_DEBUG
-// #define GPU_DEBUG
+//#define NTUPLE_DEBUG
+//#define GPU_DEBUG
 
 #include <cmath>
 #include <cstdint>
@@ -221,10 +221,10 @@ __global__ void kernel_fastDuplicateRemover(GPUCACell const *__restrict__ cells,
         auto qj = tracks->quality(jt);
         if (qj <= reject)
           continue;
-#ifdef GPU_DEBUG
-        if (foundNtuplets->size(it) != foundNtuplets->size(jt))
-          printf(" a mess\n");
-#endif
+	//#ifdef GPU_DEBUG
+	//        if (foundNtuplets->size(it) != foundNtuplets->size(jt))
+	//          printf(" a mess\n");
+	//#endif
         auto opj = tracks->stateAtBS.state(jt)(2);
         auto ctj = tracks->stateAtBS.state(jt)(3);
         auto dct = nSigma2 * (tracks->stateAtBS.covariance(jt)(12) + e2cti);
@@ -564,9 +564,9 @@ __global__ void kernel_fillNLayers(TkSoA *__restrict__ ptracks) {
   auto first = blockIdx.x * blockDim.x + threadIdx.x;
   for (int idx = first, nt = TkSoA::stride(); idx < nt; idx += gridDim.x * blockDim.x) {
     auto nHits = tracks.nHits(idx);
-    if (nHits == 0)
-      break;  // this is a guard: maybe we need to move to nTracks...
-    tracks.nLayers(idx) = tracks.computeNumberOfLayers(idx);
+    if (nHits == 0) break;  // this is a guard: maybe we need to move to nTracks...
+    int nl = tracks.computeNumberOfLayers(idx);
+    tracks.nLayers(idx) = nl;//tracks.computeNumberOfLayers(idx);
   }
 }
 

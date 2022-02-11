@@ -69,9 +69,9 @@ namespace phase1PixelTopology {
 
   constexpr uint32_t numberOfModules = 1856;
   constexpr uint32_t numberOfLayers = 10;
-  //#ifdef __CUDA_ARCH__
-  //  __device__
-      //#endif
+  #ifdef __CUDA_ARCH__
+    __device__
+  #endif
   constexpr uint32_t layerStart[numberOfLayers + 1] = {0,
                                                        96,
                                                        320,
@@ -146,12 +146,26 @@ namespace phase1PixelTopology {
 
   constexpr uint32_t layerIndexSize = numberOfModules / maxModuleStride;
   //#ifdef __CUDA_ARCH__
-  //  __device__
+  //__device__
   //#endif 
-  constexpr std::array<uint8_t, layerIndexSize> layer = pixelTopology::map_to_array<layerIndexSize>(findLayerFromCompact);
+  __device__ constexpr std::array<uint8_t, layerIndexSize> layer = pixelTopology::map_to_array<layerIndexSize>(findLayerFromCompact);
 
   constexpr uint8_t getLayer(uint32_t detId) {
-    return phase1PixelTopology::layer[detId / phase1PixelTopology::maxModuleStride];
+    //if(detId > 972*phase1PixelTopology::maxModuleStride || detId < 1) return 1;
+    //if(detId > 500 || detId < 10) return 0;
+    //uint32_t id = detId / phase1PixelTopology::maxModuleStride;
+    //int id2 = 10;
+    //auto id = 50;
+    //return  phase1PixelTopology::layer[id];
+    //if(detId > 50) {
+    //  auto id1 = 50;
+    //  return  phase1PixelTopology::layer[id1];
+    //} else { 
+    auto id = detId / phase1PixelTopology::maxModuleStride; 
+    return  phase1PixelTopology::layer[id];
+    //}
+    //if(detId < 50*phase1PixelTopology::maxModuleStride) return phase1PixelTopology::layer[id];
+    //return phase1PixelTopology::layer[90];
   }
 
   constexpr bool validateLayerIndex() {
