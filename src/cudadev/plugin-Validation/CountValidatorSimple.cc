@@ -82,7 +82,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
   auto size_   = std::make_unique<uint64_t[]>(1);
   unsigned int pCount = 0;
   {
-    //uint32_t  nErrors_;
+    uint32_t  nErrors_;
     uint32_t  nHits_;
     
     auto const& hits = iEvent.get(hitsToken_);
@@ -158,13 +158,11 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
       std::memcpy(output_.get() + pCount,adc     ,nDigis_*sizeof(uint16_t)); pCount+=2*nDigis_;
       std::memcpy(output_.get() + pCount,clus    ,nDigis_*sizeof(int32_t));  pCount+=4*nDigis_;
     }
-    /*
     auto const& pdigiErrors = iEvent.get(digiErrorToken_);
     nErrors_ = pdigiErrors.size();
     if(nErrors_ > 0) std::cout << " ---> Found an Error " << std::endl;
     std::memcpy(output_.get()+pCount,&nErrors_,sizeof(uint32_t)); pCount += 4;
     std::memcpy(output_.get()+pCount,pdigiErrors.errorVector().data(),10*nErrors_);     pCount += 10*nErrors_;
-    */
   }
   if( suppressTracks_ ) {
     auto const& tracks = iEvent.get(trackToken_);

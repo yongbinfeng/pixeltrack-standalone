@@ -32,7 +32,8 @@ private:
 
 SiPixelDigiErrorsSoAFromCUDA::SiPixelDigiErrorsSoAFromCUDA(edm::ProductRegistry& reg)
   : digiErrorGetToken_{reg.consumes<cms::cuda::Product<SiPixelDigiErrorsCUDA>>()},
-    digiErrorPutToken_{reg.produces<SiPixelErrorsSoA>()} {}
+    digiErrorPutToken_{reg.produces<SiPixelErrorsSoA>()} {
+}
 
 void SiPixelDigiErrorsSoAFromCUDA::acquire(edm::Event const& iEvent,
                                            edm::EventSetup const& iSetup,
@@ -41,10 +42,7 @@ void SiPixelDigiErrorsSoAFromCUDA::acquire(edm::Event const& iEvent,
   cms::cuda::ScopedContextAcquire ctx{iEvent.streamID(), std::move(waitingTaskHolder)};
   const auto& gpuDigiErrors = ctx.get(iEvent, digiErrorGetToken_);
   formatterErrors_ = &(gpuDigiErrors.formatterErrors());
-
-  if (gpuDigiErrors.nErrorWords() == 0)
-    return;
-
+  
   auto tmp = gpuDigiErrors.dataErrorToHostAsync(ctx.stream());
   error_ = tmp.first;
   data_ = std::move(tmp.second);
