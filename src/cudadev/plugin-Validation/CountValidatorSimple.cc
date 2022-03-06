@@ -95,7 +95,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
         std::memcpy(output_.get() + pCount,hits.get()+1,    (maxNumModules+1)*sizeof(uint32_t)); pCount += 4*(maxNumModules+1);
         std::memcpy(output_.get() + pCount,hits.get()+maxNumModules+2, (4*nHits_)*sizeof(float)); pCount+=4*(4*nHits_);
 
-        std::cout << "nhits " << nHits_ << std::endl;
+        //std::cout << "nhits " << nHits_ << std::endl;
 
         //auto const& pdigis = iEvent.get(digiToken_);
         //cms::cuda::ScopedContextProduce ctx{pdigis};
@@ -186,23 +186,23 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
             delete [] adcArrs;
             delete [] clusArrs;
         }
-        std::cout << "nDigis_ " << nDigis_ << std::endl;
+        //std::cout << "nDigis_ " << nDigis_ << std::endl;
         auto const& pdigiErrors = iEvent.get(digiErrorToken_);
         //std::cout << "failed to get pdigiErros " << std::endl;
         nErrors_ = pdigiErrors.size();
-        if(nErrors_ > 0) std::cout << " ---> Found Errors " << nErrors_ << std::endl;
+        //if(nErrors_ > 0) std::cout << " ---> Found Errors " << nErrors_ << std::endl;
         //std::cout << "cp errors " << std::endl;
         std::memcpy(output_.get()+pCount,&nErrors_,sizeof(uint32_t)); pCount += 4;
         // cpp compiler would 'pad' the struct class
         std::memcpy(output_.get()+pCount,pdigiErrors.errorVector().data(),12*nErrors_);     pCount += 12*nErrors_;
-        if (nErrors_ > 0)
-            std::cout << "SiPixelErrorCompact Struct size " << sizeof(pdigiErrors.errorVector()[0]) << std::endl;
+        //if (nErrors_ > 0)
+        //    std::cout << "SiPixelErrorCompact Struct size " << sizeof(pdigiErrors.errorVector()[0]) << std::endl;
         // check digiErrors
-        for (int ierr = 0; ierr < (int)nErrors_; ierr++) {
-            SiPixelErrorCompact err = pdigiErrors.errorVector().data()[ierr];
-            std::cout << "err rawId " << err.rawId << " word " << err.word << " errorType " << int(err.errorType) << " fedId " << int(err.fedId) << std::endl;
-        }
-        std::cout << "nErrors " << nErrors_ << std::endl;
+        //for (int ierr = 0; ierr < (int)nErrors_; ierr++) {
+        //    SiPixelErrorCompact err = pdigiErrors.errorVector().data()[ierr];
+        //    std::cout << "err rawId " << err.rawId << " word " << err.word << " errorType " << int(err.errorType) << " fedId " << int(err.fedId) << std::endl;
+        //}
+        //std::cout << "nErrors " << nErrors_ << std::endl;
         //std::cout << "cp erros fine " << std::endl;
     }
     //std::cout << "fine before suppressTracks_" << std::endl;
@@ -271,7 +271,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
         hitsOff[pInt]  = pHitCheck;
         detsOff[pInt]  = pDetCheck;
         nTracks = pInt;
-        std::cout << "nTracks " << nTracks << std::endl;
+        //std::cout << "nTracks " << nTracks << std::endl;
         //if (nTracks > 0 ){
         //    std::cout << "track 0 pt " << pt[0] << " eta " << eta[0] << " chi2 " << chi2[0] << " nLayers " << int(nLayers[0]) << " quality " << int(quality[0]) << std::endl;
         //}
@@ -306,7 +306,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
         delete [] idv;
 
         uint32_t nVtx = vertices->nvFinal;
-        std::cout << "nVtx " << nVtx << std::endl;
+        //std::cout << "nVtx " << nVtx << std::endl;
         std::memcpy(output_.get() + pCount,&(vertices->nvFinal),sizeof(uint32_t)); pCount += 4;
         std::memcpy(output_.get() + pCount,idv              ,nTracks*sizeof(int16_t));   pCount+=2*nTracks;
         std::memcpy(output_.get() + pCount,vertices->zv     ,nVtx*sizeof(float));        pCount+=4*nVtx;
@@ -342,7 +342,7 @@ void CountValidatorSimple::produce(edm::Event& iEvent, const edm::EventSetup& iS
         //std::memcpy(output_.get() + pCount,vertices->ndof   ,MAXVTX*sizeof(int32_t));      pCount+=4*MAXVTX;
         //std::memcpy(output_.get() + pCount,vertices->sortInd,MAXVTX*sizeof(uint16_t));     pCount+=2*MAXVTX;
         uint32_t nVtx = vertices->nvFinal;
-        std::cout << "nVtx " << nVtx << std::endl;
+        //std::cout << "nVtx " << nVtx << std::endl;
         std::memcpy(output_.get() + pCount,&(vertices->nvFinal),sizeof(uint32_t)); pCount += 4;
         std::memcpy(output_.get() + pCount,vertices->idv    ,nTracks*sizeof(int16_t));   pCount+=2*nTracks;
         std::memcpy(output_.get() + pCount,vertices->zv     ,nVtx*sizeof(float));        pCount+=4*nVtx;
