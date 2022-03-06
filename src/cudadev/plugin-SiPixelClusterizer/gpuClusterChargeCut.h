@@ -7,7 +7,7 @@
 #include "CUDACore/cuda_assert.h"
 #include "CUDACore/prefixScan.h"
 #include "CUDADataFormats/gpuClusteringConstants.h"
-#include "Geometry/phase1PixelTopology.h"
+#include "Geometry/pixelTopology.h"
 
 // local include(s)
 #include "SiPixelClusterThresholds.h"
@@ -30,17 +30,17 @@ namespace gpuClustering {
     __shared__ uint16_t newclusId[maxNumClustersPerModules];
 
     constexpr int startBPIX2 = isPhase2 ? phase2PixelTopology::layerStart[1] : phase1PixelTopology::layerStart[1];
-    //constexpr int nMaxModules = isPhase2 ? phase2PixelTopology::numberOfModules : phase1PixelTopology::numberOfModules;
+    constexpr int nMaxModules = isPhase2 ? phase2PixelTopology::numberOfModules : phase1PixelTopology::numberOfModules;
 
-    //assert(nMaxModules < maxNumModules);
-    //assert(startBPIX2 < nMaxModules);
+    assert(nMaxModules < maxNumModules);
+    assert(startBPIX2 < nMaxModules);
 
     auto firstModule = blockIdx.x;
     auto endModule = moduleStart[0];
     for (auto module = firstModule; module < endModule; module += gridDim.x) {
       auto firstPixel = moduleStart[1 + module];
       auto thisModuleId = id[firstPixel];
-      //assert(thisModuleId < nMaxModules);
+      assert(thisModuleId < nMaxModules);
       assert(thisModuleId == moduleId[module]);
 
       auto nclus = nClustersInModule[thisModuleId];

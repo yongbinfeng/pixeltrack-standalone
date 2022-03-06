@@ -148,7 +148,7 @@ void CAHitNtupletGeneratorKernelsGPU::launchKernels(HitsOnCPU const &hh, TkSoA *
   // remove duplicates (tracks that share a doublet)
   numberOfBlocks = nDoubletBlocks(blockSize);
   kernel_earlyDuplicateRemover<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
-      device_theCells_.get(), device_nCells_, tracks_d, quality_d);//, params_.dupPassThrough_);
+      device_theCells_.get(), device_nCells_, tracks_d, quality_d, params_.dupPassThrough_);
   cudaCheck(cudaGetLastError());
 
 

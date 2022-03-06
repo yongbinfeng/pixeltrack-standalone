@@ -7,7 +7,7 @@
 #include "CondFormats/SiPixelGainForHLTonGPU.h"
 #include "CUDACore/cuda_assert.h"
 #include "CUDADataFormats/gpuClusteringConstants.h"
-#include "Geometry/phase1PixelTopology.h"
+#include "Geometry/pixelTopology.h"
 
 namespace gpuCalibPixel {
 

@@ -7,7 +7,7 @@
 #include "CUDACore/HistoContainer.h"
 #include "CUDACore/cuda_assert.h"
 #include "CUDADataFormats/gpuClusteringConstants.h"
-#include "Geometry/phase1PixelTopology.h"
+#include "Geometry/pixelTopology.h"
 
 namespace gpuClustering {
 
@@ -52,13 +52,13 @@ namespace gpuClustering {
     auto firstModule = blockIdx.x;
     auto endModule = moduleStart[0];
 
-    //constexpr int nMaxModules = isPhase2 ? phase2PixelTopology::numberOfModules : phase1PixelTopology::numberOfModules;
-    //assert(nMaxModules < maxNumModules);
+    constexpr int nMaxModules = isPhase2 ? phase2PixelTopology::numberOfModules : phase1PixelTopology::numberOfModules;
+    assert(nMaxModules < maxNumModules);
 
     for (auto module = firstModule; module < endModule; module += gridDim.x) {
       auto firstPixel = moduleStart[1 + module];
       auto thisModuleId = id[firstPixel];
-      //assert(thisModuleId < nMaxModules);
+      assert(thisModuleId < nMaxModules);
 
 #ifdef GPU_DEBUG
       if (thisModuleId % 100 == 1)

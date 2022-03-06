@@ -6,7 +6,7 @@
 #include "CUDADataFormats/gpuClusteringConstants.h"
 #include "CUDACore/HistoContainer.h"
 #include "CUDACore/cudaCompat.h"
-#include "Geometry/phase1PixelTopology.h"
+#include "Geometry/pixelTopology.h"
 #include "CUDADataFormats/SiPixelHitStatus.h"
 
 namespace pixelCPEforGPU {

@@ -50,7 +50,7 @@ __global__ void kernel_checkOverflows(HitContainer const *foundNtuplets,
                                       uint32_t const *__restrict__ nCells,
                                       gpuPixelDoublets::CellNeighborsVector const *cellNeighbors,
                                       gpuPixelDoublets::CellTracksVector const *cellTracks,
-                                      GPUCACell::OuterHitOfCell const  isOuterHitOfCell,
+                                      GPUCACell::OuterHitOfCell const isOuterHitOfCell,
                                       int32_t nHits,
                                       uint32_t maxNumberOfDoublets,
                                       CAHitNtupletGeneratorKernelsGPU::Counters *counters) {
@@ -141,8 +141,8 @@ __global__ void kernel_fishboneCleaner(GPUCACell const *cells, uint32_t const *_
 __global__ void kernel_earlyDuplicateRemover(GPUCACell const *cells,
                                              uint32_t const *__restrict__ nCells,
                                              TkSoA const *__restrict__ ptracks,
-                                             Quality *quality) { //,
-  //bool dupPassThrough) {
+                                             Quality *quality,
+                                             bool dupPassThrough) {
   // quality to mark rejected
   constexpr auto reject = pixelTrack::Quality::edup;  /// cannot be loose
 
@@ -158,7 +158,7 @@ __global__ void kernel_earlyDuplicateRemover(GPUCACell const *cells,
 
     int8_t maxNl = 0;
 
-    // find maxNh
+    // find maxNl
     for (auto it : thisCell.tracks()) {
       auto nl = tracks.nLayers(it);
       maxNl = std::max(nl, maxNl);
@@ -564,9 +564,9 @@ __global__ void kernel_fillNLayers(TkSoA *__restrict__ ptracks) {
   auto first = blockIdx.x * blockDim.x + threadIdx.x;
   for (int idx = first, nt = TkSoA::stride(); idx < nt; idx += gridDim.x * blockDim.x) {
     auto nHits = tracks.nHits(idx);
-    if (nHits == 0) break;  // this is a guard: maybe we need to move to nTracks...
-    int nl = tracks.computeNumberOfLayers(idx);
-    tracks.nLayers(idx) = nl;//tracks.computeNumberOfLayers(idx);
+    if (nHits == 0)
+      break;  // this is a guard: maybe we need to move to nTracks...
+    tracks.nLayers(idx) = tracks.computeNumberOfLayers(idx);
   }
 }
 
@@ -727,7 +727,7 @@ __global__ void kernel_sharedHitCleaner(TrackingRecHit2DSOAView const *__restric
 
     int8_t maxNl = 0;
 
-    // find maxN1
+    // find maxNl
     for (auto it = hitToTuple.begin(idx); it != hitToTuple.end(idx); ++it) {
       if (quality[*it] < longTqual)
         continue;

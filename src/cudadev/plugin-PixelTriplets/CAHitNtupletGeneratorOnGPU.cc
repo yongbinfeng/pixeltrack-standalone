@@ -21,32 +21,32 @@ namespace {
   }
 
   cAHitNtupletGenerator::QualityCuts makeQualityCuts() {
-    auto coeff = std::vector<double>{0.68177776, 0.74609577, -0.08035491, 0.00315399};  // chi2Coeff
+    auto coeff = std::vector<double>{0.9, 1.8};
+    double ptMax = 10.0;
+    coeff[1] = (coeff[1] - coeff[0]) / log2(ptMax);
     return cAHitNtupletGenerator::QualityCuts{// polynomial coefficients for the pT-dependent chi2 cut
-                                              {(float)coeff[0], (float)coeff[1], (float)coeff[2], (float)coeff[3]},
+                                              {(float)coeff[0], (float)coeff[1], 0.f, 0.f},
                                               // max pT used to determine the chi2 cut
-                                              10.f,  // chi2MaxPt
-                                                     // chi2 scale factor: 30 for broken line fit, 45 for Riemann fit
-                                              8.f,  // chi2Scale
-                                                     // regional cuts for triplets
-                                              {
-                                                  0.3f,  //tripletMaxTip
-                                                  0.5f,  // tripletMinPt
-                                                  12.f   // tripletMaxZip
-                                              },
+                                              (float)ptMax,
+                                              // chi2 scale factor: 8 for broken line fit, ?? for Riemann fit
+                                              8.0f,
+                                              // regional cuts for triplets
+                                              {0.3f,
+                                               0.5f,
+                                               12.f
+                                               },
                                               // regional cuts for quadruplets
-                                              {
-                                                  0.5f,  // quadrupletMaxTip
-                                                  0.3f,  // quadrupletMinPt
-                                                  12.f   // quadrupletMaxZip
-                                              }};
+                                              {0.5f,
+                                               0.3f,
+                                               12.f
+                                               }};
   }
 }  // namespace
 
 using namespace std;
 CAHitNtupletGeneratorOnGPU::CAHitNtupletGeneratorOnGPU(edm::ProductRegistry& reg)
     : m_params(true,              // onGPU
-               3,                 // minHitsPerNtuplet,
+               4,                 // minHitsPerNtuplet,
                524288,            // maxNumberOfDoublets
                10,                 // minHitsForSharingCut
                false,             // useRiemannFit
@@ -54,19 +54,19 @@ CAHitNtupletGeneratorOnGPU::CAHitNtupletGeneratorOnGPU(edm::ProductRegistry& reg
                false,              // includeJumpingForwardDoublets
                true,              // earlyFishbone
                false,             // lateFishbone
-               true,              // idealConditions
-               false,             // doStats
+               false,              // idealConditions
+               false,             // fillStatistics
                true,              // doClusterCut
                true,              // doZ0Cut
                true,              // doPtCut
                true,              // doSharedHitCut
 	       false,              // duplciatePassThrough
 	       true,              // useSimpleTripletCleaner
-               0.899999976158,    // ptmin
-               0.00200000009499,  // CAThetaCutBarrel
-               0.00300000002608,  // CAThetaCutForward
-               0.0328407224959,   // hardCurvCut
-               0.15000000596,     // dcaCutInnerTriplet
+               0.8999999761581421,    // ptmin
+               0.0020000000949949026, // CAThetaCutBarrel
+               0.003000000026077032, // CAThetaCutForward
+               0.03284072249589491, // hardCurvCut
+               0.15000000596046448, // dcaCutInnerTriplet
                0.25,              // dcaCutOuterTriplet
                makeQualityCuts()) {
 #ifdef DUMP_GPU_TK_TUPLES

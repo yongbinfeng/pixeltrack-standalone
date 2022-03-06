@@ -4,7 +4,6 @@
 #include "DataFormats/SiPixelErrorCompact.h"
 #include "DataFormats/SiPixelFormatterErrors.h"
 
-
 #include <cstdint>
 #include <vector>
 

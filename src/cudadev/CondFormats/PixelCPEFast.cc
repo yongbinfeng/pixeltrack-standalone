@@ -4,7 +4,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "Geometry/phase1PixelTopology.h"
+#include "Geometry/pixelTopology.h"
 #include "CUDACore/cudaCheck.h"
 #include "CondFormats/PixelCPEFast.h"
 
@@ -52,6 +52,7 @@ PixelCPEFast::PixelCPEFast(std::string const &path) {
 const pixelCPEforGPU::ParamsOnGPU *PixelCPEFast::getGPUProductAsync(cudaStream_t cudaStream) const {
   const auto &data = gpuData_.dataForCurrentDeviceAsync(cudaStream, [this](GPUData &data, cudaStream_t stream) {
     // and now copy to device...
+
     cudaCheck(cudaMalloc((void **)&data.paramsOnGPU_h.m_commonParams, sizeof(pixelCPEforGPU::CommonParams)));
     cudaCheck(cudaMalloc((void **)&data.paramsOnGPU_h.m_detParams,
                          this->detParamsGPU_.size() * sizeof(pixelCPEforGPU::DetParams)));

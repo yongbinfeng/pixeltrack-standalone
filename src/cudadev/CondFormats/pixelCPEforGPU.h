@@ -8,7 +8,7 @@
 
 #include "CUDADataFormats/gpuClusteringConstants.h"
 #include "DataFormats/SOARotation.h"
-#include "Geometry/phase1PixelTopology.h"
+#include "Geometry/pixelTopology.h"
 #include "CUDACore/cudaCompat.h"
 #include "CUDADataFormats/SiPixelHitStatus.h"
 

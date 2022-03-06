@@ -4,7 +4,7 @@
 #include "CUDACore/HistoContainer.h"
 #include "CUDADataFormats/HeterogeneousSoA.h"
 #include "CUDADataFormats/TrajectoryStateSoAT.h"
-#include "Geometry/phase1PixelTopology.h"
+#include "Geometry/pixelTopology.h"
 
 namespace pixelTrack {
   enum class Quality : uint8_t { bad = 0, edup, dup, loose, strict, tight, highPurity, notQuality };
@@ -20,6 +20,7 @@ template <int32_t S>
 class TrackSoAHeterogeneousT {
 public:
   static constexpr int32_t stride() { return S; }
+  uint32_t ntFinal;
 
   using Quality = pixelTrack::Quality;
   using hindex_type = uint32_t;
@@ -50,9 +51,10 @@ public:
     auto pdet = detIndices.begin(i);
     int nl = 1;
     auto ol = phase1PixelTopology::getLayer(*pdet);
-    for (; pdet < detIndices.end(i); ++pdet) { 
-      int il = phase1PixelTopology::getLayer(*pdet);
-      if (il != ol) ++nl;
+    for (; pdet < detIndices.end(i); ++pdet) {
+      auto il = phase1PixelTopology::getLayer(*pdet);
+      if (il != ol)
+        ++nl;
       ol = il;
     }
     return nl;

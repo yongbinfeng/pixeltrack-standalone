@@ -17,7 +17,7 @@
 #endif  // __CUDACC__
 
 #include "CUDACore/cuda_assert.h"
-#include "CUDADataFormats/gpuClusteringConstants.h"
+#include "Geometry/pixelTopology.h"
 
 struct SiPixelGainForHLTonGPU_DecodingStructure {
   uint8_t gain;
@@ -56,11 +56,11 @@ public:
     return std::make_pair(decodePed(s.ped & 0xFF), decodeGain(s.gain & 0xFF));
   }
 
-  constexpr float decodeGain(unsigned int gain) const { return gain * gainPrecision_ + minGain_; }
-  constexpr float decodePed(unsigned int ped) const { return ped * pedPrecision_ + minPed_; }
+  constexpr float decodeGain(unsigned int gain) const { return float(gain) * gainPrecision_ + minGain_; }
+  constexpr float decodePed(unsigned int ped) const { return float(ped) * pedPrecision_ + minPed_; }
 
   DecodingStructure* v_pedestals_;
-  std::pair<Range, int> rangeAndCols_[gpuClustering::maxNumModules];
+  std::pair<Range, int> rangeAndCols_[phase1PixelTopology::numberOfModules];
 
   float minPed_, maxPed_, minGain_, maxGain_;
   float pedPrecision_, gainPrecision_;

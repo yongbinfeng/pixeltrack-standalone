@@ -62,8 +62,8 @@ SiPixelRawToClusterCUDA::SiPixelRawToClusterCUDA(edm::ProductRegistry& reg)
       clusterPutToken_(reg.produces<cms::cuda::Product<SiPixelClustersCUDA>>()),
       isRun2_(true),
       includeErrors_(true),
-      useQuality_(true),
-      maxFedWords_(150*2000),
+      useQuality_(false),
+      maxFedWords_(300000),
       clusterThresholds_{kSiPixelClusterThresholdsDefaultPhase1.layer1,
                          kSiPixelClusterThresholdsDefaultPhase1.otherLayers} {
   if (includeErrors_) {
@@ -104,13 +104,15 @@ void SiPixelRawToClusterCUDA::acquire(const edm::Event& iEvent,
 
   // In CPU algorithm this loop is part of PixelDataFormatter::interpretRawData()
   ErrorChecker errorcheck;
-  for (int fedId : fedIds_) {
-    if (fedId == 40)
+  for (unsigned int fedIdtemp : fedIds_) {
+    if (fedIdtemp == 40)
       continue;  // skip pilot blade data
+    int fedId = fedIdtemp;
 
     // for GPU
     // first 150 index stores the fedId and next 150 will store the
     // start index of word in that fed
+    //std::cout << "fedid " << fedId << std::endl;
     assert(fedId >= FEDNumbering::MINSiPixeluTCAFEDID);
     fedCounter++;
 
@@ -171,7 +173,7 @@ void SiPixelRawToClusterCUDA::acquire(const edm::Event& iEvent,
                              std::move(errors_),
                              wordCounterGPU,
                              fedCounter,
-			     maxFedWords_,
+            			     maxFedWords_,
                              useQuality_,
                              includeErrors_,
                              false,  // debug
