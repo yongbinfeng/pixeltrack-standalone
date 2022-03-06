@@ -19,15 +19,24 @@ private:
 
 void SiPixelROCsStatusAndMappingWrapperESProducer::produce(edm::EventSetup& eventSetup) {
   {
+    std::cout << "reading fedIds " << std::endl;
     std::ifstream in(data_ / "fedIds.bin", std::ios::binary);
     in.exceptions(std::ifstream::badbit | std::ifstream::failbit | std::ifstream::eofbit);
     unsigned int nfeds;
     in.read(reinterpret_cast<char*>(&nfeds), sizeof(unsigned));
     std::vector<unsigned int> fedIds(nfeds);
     in.read(reinterpret_cast<char*>(fedIds.data()), sizeof(unsigned int) * nfeds);
+
+    std::cout << " nfeds " << nfeds << "fed ids " << std::endl;
+    for (auto fedid: fedIds ) {
+        std::cout << "id " << fedid;
+    }
+    std::cout << std::endl;
     eventSetup.put(std::make_unique<SiPixelFedIds>(std::move(fedIds)));
+    std::cout << "done reading fedIds " << std::endl; 
   }
   {
+    std::cout << "reading cablingMap.bin " << std::endl;
     std::ifstream in(data_ / "cablingMap.bin", std::ios::binary);
     in.exceptions(std::ifstream::badbit | std::ifstream::failbit | std::ifstream::eofbit);
     SiPixelROCsStatusAndMapping obj;
@@ -37,6 +46,7 @@ void SiPixelROCsStatusAndMappingWrapperESProducer::produce(edm::EventSetup& even
     std::vector<unsigned char> modToUnpDefault(modToUnpDefSize);
     in.read(reinterpret_cast<char*>(modToUnpDefault.data()), modToUnpDefSize);
     eventSetup.put(std::make_unique<SiPixelROCsStatusAndMappingWrapper>(obj, std::move(modToUnpDefault)));
+    std::cout << "done reading cablingMap.bin" << std::endl;
   }
 }
 

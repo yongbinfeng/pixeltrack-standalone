@@ -17,7 +17,9 @@ private:
 };
 
 void PixelCPEFastESProducer::produce(edm::EventSetup& eventSetup) {
+  std::cout << "reading cpefast.bin" << std::endl;
   eventSetup.put(std::make_unique<PixelCPEFast>(data_ / "cpefast.bin"));
+  std::cout << "done reading cpefast.bin " << std::endl;
 }
 
 DEFINE_FWK_EVENTSETUP_MODULE(PixelCPEFastESProducer);
